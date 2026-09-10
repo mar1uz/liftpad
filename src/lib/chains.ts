@@ -5,7 +5,7 @@ export const CHAINS: Record<ChainKey, { name: string; short: string; id?: number
   bsc: { name:'BNB Chain', short:'BNB', id:56, symbol:'BNB', color:'#f3ba2f', explorer:'https://bscscan.com', dexId:'bsc' },
   hyperevm: { name:'HyperEVM', short:'HYPE', id:999, symbol:'HYPE', color:'#39e58c', explorer:'https://hyperevmscan.io', dexId:'hyperevm' },
   stable: { name:'Stable', short:'STABLE', id:988, symbol:'USDT0', color:'#d8d4c4', explorer:'https://stablescan.xyz', dexId:'stable' },
-  robinhood: { name:'Robinhood Chain', short:'RH', id:4663, symbol:'ETH', color:'#e08a4a', explorer:'https://robinhoodchain.blockscout.com', dexId:'robinhood' },
+  robinhood: { name:'Robinhood Chain', short:'RH', id:4663, symbol:'ETH', color:'#f04b2f', explorer:'https://robinhoodchain.blockscout.com', dexId:'robinhood' },
 };
 export const chainFromDex = (id: string): ChainKey | undefined => (Object.keys(CHAINS) as ChainKey[]).find(k => CHAINS[k].dexId === id);
 export function explorerUrl(chain: ChainKey, kind: 'token'|'tx'|'address', address: string) {

@@ -1,18 +1,18 @@
 import type { Metadata } from 'next';
-import { Instrument_Sans, Fraunces } from 'next/font/google';
+import { Outfit, Unbounded } from 'next/font/google';
 import './globals.css';
 
-const sans = Instrument_Sans({
+const sans = Outfit({
   subsets: ['latin'],
   variable: '--font-sans',
   weight: ['400', '500', '600', '700'],
   display: 'swap',
 });
 
-const display = Fraunces({
+const display = Unbounded({
   subsets: ['latin'],
   variable: '--font-display',
-  weight: ['400', '500', '600', '700'],
+  weight: ['500', '600', '700', '800'],
   display: 'swap',
 });
 

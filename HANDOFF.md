@@ -122,7 +122,7 @@ Stare la 10 septembrie 2026. Abaterile neaprobate se prezintă utilizatorului î
 | Cerință din plan | Stare | Notă |
 |---|---|---|
 | Next.js pe Vercel | parțial | App Next 16 există (`still-launchpad`). Deploy Vercel neconfigurat în repo. |
-| Design LONG, tot UI-ul | parțial | Ecranele Explore / Create / Token / Portfolio există; audit vizual LONG nu e închis. |
+| Design LONG, tot UI-ul | parțial | UI LIFT: Unbounded + vermillion, hero animat. Inspirat de ritmul LONG, nu clonă. |
 | Șase rețele | aliniat | `solana`, `base`, `bsc`, `hyperevm`, `stable`, `robinhood`. |
 | Brand independent de launchpad.meme | aliniat | Brand vizibil: **LIFT**. Pachet intern încă `still-launchpad`. |
 | Creatorul finanțează LP; semnătură din wallet | intenție, neimplementat | Fluxul de lansare nu emite încă tx-uri. |
@@ -177,3 +177,7 @@ Stare la 10 septembrie 2026. Abaterile neaprobate se prezintă utilizatorului î
 - Salvare versiune **v1.0**: schelet Next.js + restilizare vizuală LIFT. Repo git inițializat local. Commit `a9f6946`, tag `v1.0`.
 - Regândire grafică inspirată de LONG, fără clonă: paletă caldă (cerneală + os + cupru), titluri Fraunces, obiecte originale (placă, rampă, disc) în loc de lime/chart. Graficele din tabel rămân random-walk.
 - Salvare versiune **v1.1**: varianta editorială cupru / Fraunces. Commit `60f2ab5`, tag `v1.1`.
+- Varianta **premium** (nesalvată încă): Unbounded 800 + Outfit, aur champagne, inele/orb metalic în loc de rampa de cupru. Revenire la v1.1: `git checkout v1.1`.
+- Paletă schimbată din aur în oțel/cobalt; hero-ul e animat lent (inele, sferă, plan).
+- Paletă vermillion pe negru; animația din hero e pe HTML/CSS (inele 10–16s) și nu mai e oprită de Reduce Motion.
+- Salvare versiune **v1.2**: Unbounded, vermillion, hero animat.
