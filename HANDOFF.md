@@ -176,4 +176,4 @@ Stare la 10 septembrie 2026. Abaterile neaprobate se prezintă utilizatorului î
 - Brand redenumit din STILL în **LIFT** (acțiune, lansare). Logo: marcă lime cu pad + săgeată în sus + wordmark. Cheile localStorage `still.*` rămân ca să nu se piardă drafturile.
 - Salvare versiune **v1.0**: schelet Next.js + restilizare vizuală LIFT. Repo git inițializat local. Commit `a9f6946`, tag `v1.0`.
 - Regândire grafică inspirată de LONG, fără clonă: paletă caldă (cerneală + os + cupru), titluri Fraunces, obiecte originale (placă, rampă, disc) în loc de lime/chart. Graficele din tabel rămân random-walk.
-- Salvare versiune **v1.1**: varianta editorială cupru / Fraunces.
+- Salvare versiune **v1.1**: varianta editorială cupru / Fraunces. Commit `60f2ab5`, tag `v1.1`.
