@@ -15,7 +15,7 @@ export function ChainIcon({ chain }: { chain: ChainKey }) {
 
 export function TokenIcon({ token, large = false }: { token: Token; large?: boolean }) {
   return (
-    <span className={`token-icon ${large ? 'large' : ''}`} style={{ background: token.color || '#c8f542' }}>
+    <span className={`token-icon ${large ? 'large' : ''}`} style={{ background: token.color || '#e08a4a' }}>
       {token.image ? (
         <img src={token.image} alt="" referrerPolicy="no-referrer" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
       ) : (
@@ -29,7 +29,7 @@ export function Mark({ size = 28 }: { size?: number }) {
   return (
     <svg className="mark" width={size} height={size} viewBox="0 0 32 32" aria-hidden="true">
       <rect width="32" height="32" rx="9" fill="currentColor" />
-      <path d="M8 23.5h16M16 21V9.5M11.2 14.2 16 9.4l4.8 4.8" fill="none" stroke="#12140a" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M8 23.5h16M16 21V9.5M11.2 14.2 16 9.4l4.8 4.8" fill="none" stroke="#1a120c" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   );
 }
@@ -58,7 +58,7 @@ export function Sparkline({ seed = 1, negative = false, large = false }: { seed?
   });
   const line = coords.map((p) => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ');
   const area = `M 0 200 L ${coords.map((p) => `${p.x.toFixed(1)} ${p.y.toFixed(1)}`).join(' L ')} L 600 200 Z`;
-  const stroke = negative ? '#ff7259' : '#c8f542';
+  const stroke = negative ? '#d46a5c' : '#c9844a';
   return (
     <svg className={large ? 'price-chart' : 'sparkline'} viewBox="0 0 600 200" preserveAspectRatio="none" role="img" aria-label="Illustrative price chart">
       <defs>

@@ -175,3 +175,5 @@ Stare la 10 septembrie 2026. Abaterile neaprobate se prezintă utilizatorului î
 - Restilizare UI: paletă negru + lime (`#c8f542`), tipografie Syne 800 / Instrument Sans, grafice random-walk în loc de sinusoidă. Minimalismul rămâne, dar mai bold. Designul LONG rămâne referință de densitate, nu de paletă/greutate.
 - Brand redenumit din STILL în **LIFT** (acțiune, lansare). Logo: marcă lime cu pad + săgeată în sus + wordmark. Cheile localStorage `still.*` rămân ca să nu se piardă drafturile.
 - Salvare versiune **v1.0**: schelet Next.js + restilizare vizuală LIFT. Repo git inițializat local. Commit `a9f6946`, tag `v1.0`.
+- Regândire grafică inspirată de LONG, fără clonă: paletă caldă (cerneală + os + cupru), titluri Fraunces, obiecte originale (placă, rampă, disc) în loc de lime/chart. Graficele din tabel rămân random-walk.
+- Salvare versiune **v1.1**: varianta editorială cupru / Fraunces.

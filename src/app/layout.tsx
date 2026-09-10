@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { Instrument_Sans, Syne } from 'next/font/google';
+import { Instrument_Sans, Fraunces } from 'next/font/google';
 import './globals.css';
 
 const sans = Instrument_Sans({
@@ -9,10 +9,10 @@ const sans = Instrument_Sans({
   display: 'swap',
 });
 
-const display = Syne({
+const display = Fraunces({
   subsets: ['latin'],
   variable: '--font-display',
-  weight: ['600', '700', '800'],
+  weight: ['400', '500', '600', '700'],
   display: 'swap',
 });
 
