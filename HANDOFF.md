@@ -180,4 +180,4 @@ Stare la 10 septembrie 2026. Abaterile neaprobate se prezintă utilizatorului î
 - Varianta **premium** (nesalvată încă): Unbounded 800 + Outfit, aur champagne, inele/orb metalic în loc de rampa de cupru. Revenire la v1.1: `git checkout v1.1`.
 - Paletă schimbată din aur în oțel/cobalt; hero-ul e animat lent (inele, sferă, plan).
 - Paletă vermillion pe negru; animația din hero e pe HTML/CSS (inele 10–16s) și nu mai e oprită de Reduce Motion.
-- Salvare versiune **v1.2**: Unbounded, vermillion, hero animat.
+- Salvare versiune **v1.2**: Unbounded, vermillion, hero animat. Commit `c5a36a9`, tag `v1.2`.
