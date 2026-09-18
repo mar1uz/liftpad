@@ -1,7 +1,7 @@
 'use client';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
-import { ArrowLeft, ArrowUpRight, Star, Share2, Layers, LoaderCircle, Copy, Download } from 'lucide-react';
+import { ArrowLeft, ArrowUpRight, Star, Share2, LoaderCircle, Copy, Download } from 'lucide-react';
 import { CHAINS, explorerUrl } from '@/lib/chains';
 import type { Token, TradeQuote } from '@/lib/types';
 import { isProtocolToken } from '@/lib/protocol';
@@ -10,6 +10,7 @@ import { tradeQuoteAddress, tradeQuoteSymbol } from '@/lib/trade-quote';
 import type { WalletState } from './launchpad';
 import { ChainIcon, TokenIcon, Modal, ExternalLink, Wordmark } from './ui';
 import { ProtocolBurnPanel } from './protocol';
+import { DailyChart, NetworkRankBadge, type SnapshotInsights } from './daily-chart';
 
 export function TokenDetail({
   token,
@@ -36,6 +37,7 @@ export function TokenDetail({
   const [txStatus, setTxStatus] = useState('');
   const [share, setShare] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [insights, setInsights] = useState<SnapshotInsights | null>(null);
   const liftLaunch = token.source === 'liftpad';
   const paySymbol = side === 'buy' ? tradeQuoteSymbol(token) : token.symbol;
   const receiveSymbol = side === 'buy' ? token.symbol : tradeQuoteSymbol(token);
@@ -319,12 +321,14 @@ export function TokenDetail({
               </h2>
             </div>
             <span className="badge">24H</span>
+            <NetworkRankBadge insights={insights} chain={token.chain} />
           </div>
-          <div className="chart-unavailable">
-            <Layers size={25} />
-            <p>Historical candles are not connected yet.</p>
-            {token.url && <ExternalLink href={token.url}>Open on explorer / DEX Screener</ExternalLink>}
-          </div>
+          <DailyChart
+            chain={token.chain}
+            pool={token.poolAddress || token.address}
+            explorerHref={token.url}
+            onInsights={setInsights}
+          />
           <div className="token-stats">
             {[
               ['Market cap', money(token.marketCap)],

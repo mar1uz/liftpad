@@ -625,3 +625,6 @@
   .stock-feature-card{min-height:110px}
   .stock-feature-card strong{font-size:24px}
 }
+
+/* === Daily snapshot features (2026-09-18) === */
+.movers{padding:10px 0 6px}.movers .section-heading{margin-bottom:18px}.movers .muted{display:inline-flex;gap:6px;align-items:center}.movers .muted svg{color:var(--up)}.movers-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}.movers-grid .token-card{position:relative}.rank-badge{color:var(--up);border-color:#2a5a45;background:#122018;margin-left:8px;text-transform:none;letter-spacing:.3px}@media(max-width:800px){.movers-grid{grid-template-columns:1fr}}
