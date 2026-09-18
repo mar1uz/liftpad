@@ -322,6 +322,26 @@ Trezorerie EVM (Base, BSC, HyperEVM, Arbitrum, Robinhood): `0x6810EB6699f8d497de
 - Create review: scos lista Fee to / trezorerie / Pair / Your liquidity / Buyers on the curve.
 - Favicon LIFT adăugat în `src/app/icon.svg`, folosind marca pătrat + săgeată din wordmark.
 
+## Journal — 2026-09-18 (Stage 1: daily market snapshots)
+
+- PR: https://github.com/mar1uz/liftpad/pull/1 (branch `feat/daily-market-snapshots`, draft → merged de utilizator).
+- Problema: datele de piață veneau doar live din DEX Screener; Supabase nu primea trafic zilnic (risc de pauză free-tier după ~7 zile inactiv) și token page avea placeholder „Historical candles are not connected yet”.
+- Construit:
+  - `supabase/migrations/003_market_snapshots.sql`: `token_market_snapshots` (un daily-close per token, PK `token_id+day`, RLS, doar service role) + `job_runs` (running/success/error, items, error).
+  - `supabase/functions/market-snapshot/index.ts`: Edge Function; refuză orice apel fără `Authorization: Bearer <service role key>`; citește `/api/market` de pe `MARKET_SNAPSHOT_APP_ORIGIN` (default https://liftpad.xyz) și face upsert idempotent; loghează fiecare rulare în `job_runs`. Programare: `pg_cron` job `market-snapshot-daily` la 00:05 UTC prin `pg_net` (SQL-ul exact e în `supabase/functions/market-snapshot/README.md`, cu cheia service introdusă manual — nu intră în git).
+  - Rute noi: `GET /api/movers` (top 3 câștigători ai zilei, filtru lichiditate ≥ $1k) și `GET /api/snapshots?chain&pool` (seria de daily-close, max 90 zile, + rank de volum în rețea). Ambele întorc payload gol (200) când storage-ul nu e configurat sau jobul nu a rulat — site-ul nu se strică niciodată din cauza pipeline-ului.
+  - UI: token page arată graficul SVG de daily-close + badge „#N of M on <network>” lângă badge-ul 24H; homepage are banda „Top movers today” (3 carduri, refolosește TokenCard). Ambele se ascund elegant până există date.
+  - Teste: `tests/market-snapshots.test.ts` (6 teste noi). `npm run check` = typecheck + 31/31 pass.
+- Activare (o singură dată, după merge):
+  1. Rulează `supabase/migrations/003_market_snapshots.sql` în SQL editor (sau Management API).
+  2. `SUPABASE_ACCESS_TOKEN=... supabase functions deploy market-snapshot --project-ref efapexfqzymileohqlmx`.
+  3. Rulează o dată SQL-ul de programare din `supabase/functions/market-snapshot/README.md` (înlocuiește `<SERVICE_ROLE_KEY>`).
+  4. `.env` pe VM are deja `SUPABASE_URL` + `SUPABASE_SERVICE_ROLE_KEY` (le folosește `database()`); nimic nou nu trebuie adăugat.
+- Deploy web: pe Mac, `git pull --ff-only` apoi `./deploy/deploy.sh 207.127.89.107 ubuntu ~/.ssh/oracle_lift.key` (rsync + rebuild Docker pe VM).
+- Verificare: `select * from public.job_runs order by started_at desc limit 5;` (un success/zi), `https://liftpad.xyz/api/movers` (movers ne-gol), o pagină de token (grafic după 2+ zile, badge după prima zi).
+- Monitorizare: `job_runs` e sursa de adevăr a jobului; dacă cron-ul moare, pauza free-tier revine după ~7 zile (email de la Supabase).
+- Rollback: web = `git revert <merge>` + redeploy cu deploy.sh; cron = `select cron.unschedule('market-snapshot-daily');`; tabele = drop manual doar dacă chiar e nevoie (pierdere de date).
+
 ## Journal — 2026-09-18
 - Repo urcat pe GitHub: https://github.com/mar1uz/liftpad (privat). Remote `origin` = acel URL. `.env` rămâne local (gitignore); pe GitHub e doar `.env.example`.
 
