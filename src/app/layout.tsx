@@ -17,8 +17,9 @@ const display = Unbounded({
 });
 
 export const metadata: Metadata = {
-  title: { default: 'LIFT — Launch on six networks', template: '%s · LIFT' },
-  description: 'Discover and launch community tokens across six networks, including Stock Token pairs on Robinhood Chain.',
+  metadataBase: new URL('https://liftpad.xyz'),
+  title: { default: 'liftpad — Launch on seven networks', template: '%s · liftpad' },
+  description: 'Discover and launch community tokens across seven validated networks, including Arc, Arbitrum and Stock Token pairs on Robinhood Chain.',
   robots: { index: false, follow: false }
 };
 

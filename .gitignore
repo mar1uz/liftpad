@@ -5,3 +5,7 @@ node_modules/
 *.tsbuildinfo
 .vercel/
 coverage/
+
+.env
+.env.local
+.supabase_service_role.key

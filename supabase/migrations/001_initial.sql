@@ -26,7 +26,7 @@ create policy "Users manage own watchlist" on public.watchlist for all to authen
 create table public.launches (
  id uuid primary key default gen_random_uuid(),
  owner_id uuid not null references auth.users(id),
- chain text not null check(chain in ('solana','base','bsc','hyperevm','stable','robinhood')),
+ chain text not null check(chain in ('solana','base','bsc','hyperevm','arbitrum','robinhood','arc')),
  token_address text,
  pool_address text,
  stage text not null default 'draft' check(stage in ('draft','token','approval','pool','liquidity','complete')),

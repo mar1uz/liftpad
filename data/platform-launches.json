@@ -1,0 +1,16 @@
+[
+  {
+    "id": "ember-seed-umcqb",
+    "chain": "solana",
+    "name": "EMBER",
+    "symbol": "EMBER",
+    "description": "Small dragon. Big story.",
+    "imageUrl": "https://liftpad.xyz/tokens/ember.webp",
+    "tokenAddress": "UmcqbRKhSkpieA5fVpYt8HtjEGuM9ZFkPWf61GASFLF",
+    "poolAddress": "UmcqbRKhSkpieA5fVpYt8HtjEGuM9ZFkPWf61GASFLF",
+    "creatorWallet": "DCi5dm111111111111111111111111111111111XQJZ",
+    "quoteSymbol": "SOL",
+    "createdAt": "2026-09-11T22:18:31.719Z",
+    "stage": "complete"
+  }
+]

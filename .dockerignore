@@ -1,0 +1,15 @@
+node_modules
+.next
+.git
+*.tsbuildinfo
+.env
+.env.*
+!.env.example
+HANDOFF.md
+AGENTS.md
+CLAUDE.md
+coverage
+tests
+deploy
+docs
+*.md

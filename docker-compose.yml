@@ -1,0 +1,55 @@
+services:
+  lift:
+    build:
+      context: .
+      args:
+        NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID: ${NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID:-}
+    image: liftpad:latest
+    container_name: liftpad
+    restart: unless-stopped
+    expose:
+      - "3000"
+    env_file:
+      - .env
+    environment:
+      NODE_ENV: production
+      HOSTNAME: 0.0.0.0
+      PORT: "3000"
+      RPC_SOLANA: ${RPC_SOLANA:-https://api.mainnet-beta.solana.com}
+      LAUNCHLAB_PLATFORM_ID: ${LAUNCHLAB_PLATFORM_ID:-}
+      SUPABASE_URL: ${SUPABASE_URL:-}
+      SUPABASE_SERVICE_ROLE_KEY: ${SUPABASE_SERVICE_ROLE_KEY:-}
+      RPC_BASE: ${RPC_BASE:-}
+      RPC_BSC: ${RPC_BSC:-}
+      RPC_ROBINHOOD: ${RPC_ROBINHOOD:-}
+      RPC_HYPEREVM: ${RPC_HYPEREVM:-}
+      RPC_ARBITRUM: ${RPC_ARBITRUM:-}
+      STOCK_TOKENS_ENABLED: ${STOCK_TOKENS_ENABLED:-false}
+      ELIGIBILITY_VERIFIER_URL: ${ELIGIBILITY_VERIFIER_URL:-}
+      NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID: ${NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID:-}
+    volumes:
+      - ./data:/app/data
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/api/status').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 30s
+      timeout: 8s
+      retries: 5
+      start_period: 20s
+  caddy:
+    image: caddy:2
+    container_name: liftpad-caddy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - lift
+
+volumes:
+  caddy_data:
+  caddy_config:
