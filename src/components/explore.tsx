@@ -8,6 +8,7 @@ import { money,percent,priceUsd,usableTokenImage } from '@/lib/format';
 import { isProtocolToken, isStockPair } from '@/lib/protocol';
 import { ChainIcon,TokenIcon,HeroMotion } from './ui';
 import { ProtocolHow } from './protocol';
+import { TopMovers } from './top-movers';
 export function Explore({watch,onWatch}:{watch:string[];onWatch:(id:string)=>void}){
  const [tokens,setTokens]=useState<Token[]>([]),[chain,setChain]=useState<ChainKey|'all'>('all'),[tab,setTab]=useState('Trending'),[query,setQuery]=useState(''),[busy,setBusy]=useState(true),[error,setError]=useState(''),[filters,setFilters]=useState(false),[minLiquidity,setMinLiquidity]=useState(''),[sort,setSort]=useState('volume'),[page,setPage]=useState(0);
  useEffect(()=>{const controller=new AbortController();const timer=setTimeout(async()=>{setBusy(true);setError('');try{const q=query.trim();const r=await fetch(q.length>=2?`/api/market?q=${encodeURIComponent(q)}`:'/api/market',{signal:controller.signal});const data=await r.json();if(!r.ok)throw new Error(data.error);const remote=(data.tokens||[]).filter((t:Token)=>t.source!=='demo');
@@ -44,6 +45,7 @@ export function Explore({watch,onWatch}:{watch:string[];onWatch:(id:string)=>voi
   <div className="arc-banner-actions"><Link className="primary-button" href="/create?chain=arc">Launch on Arc <ArrowUpRight size={16}/></Link><button className="secondary-button" type="button" onClick={()=>{setChain('arc');document.querySelector('.market')?.scrollIntoView({behavior:'smooth',block:'start'});}}>Explore Arc <ArrowRight size={15}/></button></div>
  </section>
  <ProtocolHow/>
+ <TopMovers watch={watch} onWatch={onWatch}/>
  <section className="stock-feature" aria-labelledby="stock-feature-title">
   <div className="stock-feature-copy">
    <div className="stock-feature-kicker"><span className="new-tag">NEW</span><span className="live-dot"/> Stock pairs are live</div>
