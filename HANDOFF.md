@@ -322,6 +322,29 @@ Trezorerie EVM (Base, BSC, HyperEVM, Arbitrum, Robinhood): `0x6810EB6699f8d497de
 - Create review: scos lista Fee to / trezorerie / Pair / Your liquidity / Buyers on the curve.
 - Favicon LIFT adăugat în `src/app/icon.svg`, folosind marca pătrat + săgeată din wordmark.
 
+## Journal — 2026-09-18 (seara) — Activare snapshots + recuperare acces VM (boot-volume surgery)
+
+### 1. Pașii de activare (executați integral, cu dovezi)
+- Migrarea `003_market_snapshots.sql` rulată în SQL Editor (proiect `efapexfqzymileohqlmx`); tabelele `token_market_snapshots` + `job_runs` confirmate (2 rows în `information_schema`).
+- Edge Function `market-snapshot` creată din dashboard (cod = `supabase/functions/market-snapshot/index.ts`) și **testată live**: invoke manual → `{"ok":true,"day":"2026-09-18","items":85}`, apoi `items:80` după deploy — ambele logate `success` în `job_runs`.
+- Extensii `pg_cron` + `pg_net` activate; programare: job **`market-snapshot-daily`**, `5 0 * * *`, `active=true` (conține target-ul `market-snapshot`). Lanțul `pg_net → edge function` verificat printr-un `net.http_post` manual din SQL (rând nou `success`, 85 items).
+- Rute noi live pe https://liftpad.xyz: `/api/movers` → 200; `/api/snapshots?chain=base&pool=0xd6f4…` → 200 cu `closes` + `rank 5/20`.
+
+### 2. Incident: accesul SSH la VM era pierdut (cheia suprascrisă pe 16 sep)
+- `deploy.sh` a eșuat cu `Permission denied (publickey)`: `~/.ssh/oracle_lift.key` fusese **regenerată** pe 16 sep (mtime 18:02); cheia originală (`ssh-key-2026-09-09`, singura din metadata) nu exista nicăieri local. Cele 3 încercări Run Command din 16 sep erau blocate `ACCEPTED` (agent OCI mort).
+- Impasuri verificate: metadata `ssh_authorized_keys` imutabilă; `user_data` nu poate fi adăugat post-launch; Run Command nu revivează (SOFTRESET + agent-config rewrite eșuate; 6 comenzi moarte); consola serială pe ARM nu afișează GRUB (single-user imposibil); conversie IP efemer→rezervat imposibilă. **STOP păstrează IP-ul efemer** (docs oficiale + verificat live).
+- Rezolvare — „boot-volume surgery” (instanța + IP 207.127.89.107 păstrate): STOP → detașare boot volume → instanță rescue `liftpad-rescue` (A1.Flex, Ubuntu 24.04 aarch64, cheia ed25519 în metadata la launch) → boot volume-ul de prod atașat ca dată (`--type paravirtualized`) → montat `/dev/sdb1`, cheia instalată în `/home/ubuntu/.ssh/authorized_keys` (uid/gid **1001**) → detașat → rescue terminat → boot volume reatașat la prod → START → SSH OK.
+- Downtime total: ~25 min (ferestrele 16:2x + 16:36–16:43). Procedura completă + capcanele: skill `free-cloud-hosting` → `references/oci-vm-access-recovery.md`.
+
+### 3. Deploy
+- `git pull --ff-only` (merge `416a84e`) + `./deploy/deploy.sh 207.127.89.107 ubuntu ~/.ssh/oracle_lift.key` → rsync + rebuild Docker pe VM.
+- Evidence: health `http 200` + `https-nip 200`; containerele `liftpad` (healthy) + `liftpad-caddy` sus; snapshot post-deploy `items:80`.
+
+### 4. Lecții operaționale
+- NU regenera `oracle_lift.key` fără verificare — recuperarea dacă se pierde = boot-volume surgery (nu metadata, nu agent, nu GRUB-serial pe ARM).
+- Editorul SQL din dashboard se automatizează prin `monaco.editor.getEditors()[0].setValue(...)` + click pe `Run`; suprafețele de rezultate se citesc cel mai bine din screenshot.
+- Dashboard-ul Supabase merge din browserul Hermes prin **Continue with GitHub** (sesiunea GitHub a profilului e autentificată).
+
 ## Journal — 2026-09-18 (Stage 1: daily market snapshots)
 
 - PR: https://github.com/mar1uz/liftpad/pull/1 (branch `feat/daily-market-snapshots`, draft → merged de utilizator).
