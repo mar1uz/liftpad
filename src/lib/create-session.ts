@@ -6,6 +6,7 @@ const EVM_LAUNCH_CHAINS = new Set<LaunchDraft['chain']>([
   'hyperevm',
   'arbitrum',
   'robinhood',
+  'near',
 ]);
 
 /** An EVM token contract exists, but no verified pool address is stored. */

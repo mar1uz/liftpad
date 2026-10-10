@@ -272,7 +272,7 @@ export function ProviderStatus() {
         <h1>
           One place.
           <br />
-          Seven connections<span>.</span>
+          Eight connections<span>.</span>
         </h1>
         <p>Configuration readiness. This is not a live uptime monitor.</p>
       </div>
@@ -302,8 +302,8 @@ export function ProviderStatus() {
       </div>
       <p className="notice">
         <Info size={16} />
-        Launch is enabled on every listed network where the status says Yes. Each EVM creator funds the token's
-        native-asset liquidity pool.
+        Launch is enabled on every listed network where the status says Yes. Each EVM and NEAR creator funds the
+        token's native-asset liquidity pool.
       </p>
     </section>
   );

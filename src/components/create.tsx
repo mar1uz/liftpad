@@ -9,6 +9,7 @@ import { type ChainKey, type LaunchDraft, type PreparedTransaction, type QuoteAs
 import { PROTOCOL, launchFeeLabel } from '@/lib/protocol';
 import { onBeforeWalletExternal } from '@/lib/wallet';
 import { isPhantomRedirectError } from '@/lib/phantom-deeplink';
+import { nearConfig } from '@/lib/near';
 import { ChainIcon, Modal } from './ui';
 import { QuotePairPicker } from './quote-pair-picker';
 import type { WalletState } from './launchpad';
@@ -64,7 +65,7 @@ function clearActiveCreateSession(draftId: string, dropHandoffHash = false) {
 }
 
 /** Networks available on Create — only launch-ready chains. */
-const CREATE_CHAINS: ChainKey[] = ['solana', 'base', 'bsc', 'hyperevm', 'arbitrum', 'robinhood', 'arc'];
+const CREATE_CHAINS: ChainKey[] = ['solana', 'base', 'bsc', 'hyperevm', 'arbitrum', 'robinhood', 'arc', 'near'];
 
 const blankDraft = (): LaunchDraft => ({
   id: (typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `lift-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`),
@@ -153,6 +154,8 @@ export function Create({
       : null;
     const next = handoffDraft || savedDraft || (requested === 'arc'
       ? { ...blankDraft(), chain: 'arc' as ChainKey, quoteAddress: '0x3600000000000000000000000000000000000000', quoteSymbol: 'USDC' }
+      : requested === 'near'
+      ? { ...blankDraft(), chain: 'near' as ChainKey, quoteAddress: nearConfig().wrap, quoteSymbol: 'NEAR' }
       : blankDraft());
     if (wantedId && !handoffDraft && !savedDraft) {
       clearActiveCreateSession(wantedId, Boolean(handoff));
@@ -239,8 +242,9 @@ export function Create({
   const eligible = assets.filter((a) => a.chain === draft.chain);
   const exampleAsset = draft.chain === 'robinhood' ? 'NVDA Stock Token' : CHAINS[draft.chain].symbol;
   const solana = draft.chain === 'solana';
-  const evmLaunch = draft.chain !== 'solana' && CREATE_CHAINS.includes(draft.chain);
-  const canLaunch = solana || evmLaunch;
+  const nearLaunch = draft.chain === 'near';
+  const evmLaunch = !solana && !nearLaunch && CREATE_CHAINS.includes(draft.chain);
+  const canLaunch = solana || evmLaunch || nearLaunch;
   const chainAssets = eligible.filter((a) => a.enabled);
   const cryptoQuotes = chainAssets.filter((a) => a.kind === 'crypto');
   const stockQuotes = chainAssets.filter((a) => a.kind === 'stock');
@@ -282,7 +286,7 @@ export function Create({
         return;
       }
     }
-    if (step === 1 && evmLaunch) {
+    if (step === 1 && (evmLaunch || nearLaunch)) {
       const tAmt = Number(draft.tokenLiquidity);
       const q = Number(draft.quoteLiquidity);
       const buy = Number(draft.initialBuy || '0');
@@ -300,7 +304,7 @@ export function Create({
         return;
       }
     }
-    if (step === 1 && !solana && !evmLaunch) {
+    if (step === 1 && !solana && !evmLaunch && !nearLaunch) {
       const t = Number(draft.tokenLiquidity);
       const q = Number(draft.quoteLiquidity);
       if (!draft.quoteSymbol || !Number.isFinite(t) || t <= 0 || t > Number(draft.supply) || !Number.isFinite(q) || q <= 0) {
@@ -547,10 +551,127 @@ export function Create({
     await completeWithPool(verified.poolAddress, firstBuyWarning);
   }
 
+  type NearLiquidityStatus = { live: boolean; poolAddress?: string; tokenExists: boolean; error?: string };
+  async function readNearLiquidityStatus(tokenAddress: string, pool?: string): Promise<NearLiquidityStatus> {
+    const params = new URLSearchParams({ chain: 'near', token: tokenAddress, account: wallet.address || '' });
+    if (pool) params.set('pool', pool);
+    const response = await fetch(`/api/launch/liquidity?${params.toString()}`, { cache: 'no-store' });
+    const body = await response.json() as NearLiquidityStatus;
+    if (!response.ok) throw new Error(body.error || 'The NEAR pool could not be checked.');
+    return body;
+  }
+
+  /** Ref Finance pool from the creator's wallet. State-based, so Resume never double-deposits. */
+  async function finishNearLiquidity(current: LaunchDraft, tokenAddress: string) {
+    if (!wallet.address) throw new Error('Reconnect your NEAR wallet before adding liquidity.');
+    let working: LaunchDraft = { ...current, stage: 'liquidity', tokenAddress, owner: wallet.address, lastError: undefined, updatedAt: new Date().toISOString() };
+    persistDraft(working);
+    setDraft(working);
+    const complete = async (poolAddress: string) => {
+      const completed: LaunchDraft = { ...working, stage: 'complete', poolAddress, lastError: undefined, updatedAt: new Date().toISOString() };
+      finishLaunch(completed);
+      const createHash = working.transactions.find((item) => item.stage === 'token')?.hash;
+      await persistCompletedLaunch(completed, createHash);
+      notify(`Launched ${current.symbol}. Ref Finance pool verified on NEAR.`);
+      setReview(true);
+    };
+    setBusyHint('Checking the pool…');
+    const before = await readNearLiquidityStatus(tokenAddress);
+    if (before.live && before.poolAddress) {
+      await complete(before.poolAddress);
+      return;
+    }
+    const response = await fetch('/api/launch/liquidity', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ chain: 'near', token: tokenAddress, tokenAmount: current.tokenLiquidity, quoteAmount: current.quoteLiquidity, account: wallet.address, pool: before.poolAddress }),
+    });
+    const prepared = await response.json() as { error?: string; transaction?: PreparedTransaction; poolAddress?: string };
+    if (!response.ok || !prepared.transaction) throw new Error(prepared.error || 'The NEAR pool transactions could not be built.');
+    setBusyHint('Approve the pool in your NEAR wallet…');
+    notify('Approve the Ref Finance pool + deposits in your NEAR wallet.');
+    let hashes: string[] = [];
+    try {
+      hashes = await wallet.sendNear(prepared.transaction);
+    } catch (e) {
+      hashes = ((e as { hashes?: string[] }).hashes || []).filter(Boolean);
+      if (!hashes.length) throw e;
+    }
+    working = {
+      ...working,
+      transactions: [...working.transactions, ...hashes.filter(Boolean).map((hash) => ({ stage: 'liquidity', hash, status: 'pending' as const }))],
+      updatedAt: new Date().toISOString(),
+    };
+    persistDraft(working);
+    setDraft(working);
+    setBusyHint('Verifying the pool…');
+    for (let attempt = 0; attempt < 20; attempt++) {
+      const status = await readNearLiquidityStatus(tokenAddress, prepared.poolAddress);
+      if (status.live && status.poolAddress) {
+        await complete(status.poolAddress);
+        return;
+      }
+      await new Promise((resolve) => window.setTimeout(resolve, 1_500));
+    }
+    throw new Error('The pool transactions were sent, but the Ref Finance pool is not funded yet. Tap Resume liquidity — deposits already made are reused.');
+  }
+
+  async function launchNear(current: LaunchDraft) {
+    const icon = current.imageUrl.startsWith('data:image/') && current.imageUrl.length <= 8_000 ? current.imageUrl : undefined;
+    const r = await fetch('/api/launch', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ chain: 'near', name: current.name.trim(), symbol: current.symbol.trim(), description: current.description, supply: current.supply, initialBuy: '0', account: wallet.address, icon, feeTx: current.feeTx }),
+    });
+    const data = await r.json() as { error?: string; tokenId?: string; alreadyCreated?: boolean; feeSkipped?: boolean; transactions?: PreparedTransaction[] };
+    if (!r.ok || !data.tokenId) throw new Error(data.error || 'NEAR launch could not be built.');
+    let feeTx = current.feeTx;
+    const txs = [...current.transactions];
+    if (!data.alreadyCreated) {
+      const tx = data.transactions?.[0];
+      if (!tx) throw new Error('NEAR launch transactions were empty.');
+      setBusyHint('Approve fee + token in your NEAR wallet…');
+      notify(data.feeSkipped ? 'Approve the token creation in your NEAR wallet.' : 'Approve the LIFT fee and token creation in your NEAR wallet.');
+      let hashes: string[] = [];
+      let failure: unknown;
+      try {
+        hashes = await wallet.sendNear(tx);
+      } catch (e) {
+        failure = e;
+        hashes = (e as { hashes?: string[] }).hashes || [];
+      }
+      const feeHash = data.feeSkipped ? undefined : hashes[0];
+      const createHash = data.feeSkipped ? hashes[0] : hashes[1];
+      if (feeHash) {
+        feeTx = feeHash;
+        txs.push({ stage: 'fee', hash: feeHash, status: 'confirmed' });
+      }
+      if (createHash) txs.push({ stage: 'token', hash: createHash, status: failure ? 'failed' : 'confirmed' });
+      if (failure) {
+        // Keep the paid fee so the retry only creates the token.
+        const paused: LaunchDraft = { ...current, feeTx, transactions: txs, owner: wallet.address, lastError: failure instanceof Error ? failure.message : 'NEAR token creation failed.', updatedAt: new Date().toISOString() };
+        persistDraft(paused);
+        setDraft(paused);
+        throw failure;
+      }
+    }
+    setBusyHint('Waiting for the token account…');
+    let exists = false;
+    for (let i = 0; i < 20 && !exists; i++) {
+      exists = (await readNearLiquidityStatus(data.tokenId)).tokenExists;
+      if (!exists) await new Promise((resolve) => window.setTimeout(resolve, 1_500));
+    }
+    if (!exists) throw new Error('Token creation was sent but the token account is not visible yet. Reopen this draft from Portfolio to continue.');
+    const deployed: LaunchDraft = { ...current, stage: 'liquidity', tokenAddress: data.tokenId, feeTx, owner: wallet.address, lastError: undefined, transactions: txs, updatedAt: new Date().toISOString() };
+    persistDraft(deployed);
+    setDraft(deployed);
+    await finishNearLiquidity(deployed, data.tokenId);
+  }
+
   async function launch() {
     const current = draft;
     if (!current) return;
-    if (!solana && !evmLaunch) {
+    if (!solana && !evmLaunch && !nearLaunch) {
       setError('Mainnet launch on this network is not enabled yet.');
       return;
     }
@@ -572,6 +693,18 @@ export function Create({
     setBusyHint('Waiting for wallet…');
     setError('');
     try {
+      if (nearLaunch) {
+        if (current.tokenAddress && isEvmLiquidityPending(current)) {
+          await finishNearLiquidity(current, current.tokenAddress);
+          return;
+        }
+        if (current.tokenAddress) {
+          setReview(true);
+          return;
+        }
+        await launchNear(current);
+        return;
+      }
       if (evmLaunch && current.tokenAddress) {
         if (isEvmLiquidityPending(current)) {
           const tokenAmount = Number(current.tokenLiquidity);
@@ -913,6 +1046,7 @@ export function Create({
                     if (chain === 'solana') patch({ chain, quoteAddress: PROTOCOL.solMint, quoteSymbol: 'SOL', initialBuy: draft.initialBuy || '0' });
                     else if (chain === 'robinhood') patch({ chain, quoteAddress: '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE', quoteSymbol: 'ETH', initialBuy: '0' });
                     else if (chain === 'arc') patch({ chain, quoteAddress: '0x3600000000000000000000000000000000000000', quoteSymbol: 'USDC', initialBuy: '0' });
+                    else if (chain === 'near') patch({ chain, quoteAddress: nearConfig().wrap, quoteSymbol: 'NEAR', initialBuy: '0' });
                     else patch({ chain, quoteAddress: '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE', quoteSymbol: CHAINS[chain].symbol, initialBuy: draft.initialBuy || '0' });
                   }}
                 >
@@ -944,6 +1078,16 @@ export function Create({
                     <input inputMode="decimal" placeholder="0" value={draft.initialBuy} onChange={(e) => patch({ initialBuy: e.target.value.replace(/[^0-9.]/g, '') })} />
                   </label>
                   <p className="fine-print">Platform fee {PROTOCOL.launchFeeSol} SOL is separate. xStocks are unavailable in restricted jurisdictions.</p>
+                </>
+              ) : nearLaunch ? (
+                <>
+                  <p className="form-description">On NEAR your token is a standard NEP-141 created by the public {nearConfig().factory} factory, then you open a Ref Finance pool against NEAR. The symbol becomes the token account ({(draft.symbol || 'symbol').toLowerCase()}.{nearConfig().factory}) and must be unused. Fee {launchFeeLabel(draft.chain)} plus about 2.3 NEAR of network storage for the token contract (paid to NEAR, not LIFT).</p>
+                  <label>Total token supply<input inputMode="numeric" value={draft.supply} onChange={(e) => patch({ supply: e.target.value.replace(/[^0-9]/g, '') })} /></label>
+                  <div className="form-grid">
+                    <label>Tokens into the pool<input inputMode="decimal" value={draft.tokenLiquidity} onChange={(e) => patch({ tokenLiquidity: e.target.value })} /></label>
+                    <label>NEAR into the pool<input inputMode="decimal" placeholder="5" value={draft.quoteLiquidity} onChange={(e) => patch({ quoteLiquidity: e.target.value })} /></label>
+                  </div>
+                  <p className="fine-print">Pool amounts leave your wallet and the LP shares stay yours. LIFT never adds liquidity. First buy is not available on NEAR yet.</p>
                 </>
               ) : evmLaunch ? (
                 <>
@@ -983,12 +1127,12 @@ export function Create({
           {step === 2 && (
             <div className="form-body">
               <h2>A small beginning.</h2>
-              <p className="form-description">{solana ? (feePaid ? 'Fee already confirmed. Next: sign LaunchLab mint in Phantom (no second fee).' : 'Two Phantom prompts: (1) platform fee, then (2) LaunchLab mint. If mint is interrupted, you can finish it without paying again.') : evmLaunch ? (liquidityPending ? 'Token already deployed. Sign only the missing pool transaction. Live after the pair is verified on-chain.' : 'Fee → deploy → your pool → optional first buy.') : 'Review your launch. This network is not enabled yet.'}</p>
+              <p className="form-description">{solana ? (feePaid ? 'Fee already confirmed. Next: sign LaunchLab mint in Phantom (no second fee).' : 'Two Phantom prompts: (1) platform fee, then (2) LaunchLab mint. If mint is interrupted, you can finish it without paying again.') : nearLaunch ? (liquidityPending ? 'Token already created. Approve only the Ref Finance pool step — deposits already made are reused.' : 'Two NEAR wallet approvals: (1) LIFT fee + token creation, then (2) your Ref Finance pool.') : evmLaunch ? (liquidityPending ? 'Token already deployed. Sign only the missing pool transaction. Live after the pair is verified on-chain.' : 'Fee → deploy → your pool → optional first buy.') : 'Review your launch. This network is not enabled yet.'}</p>
               <div className="review-list">
                 <div><span>Network</span><strong>{CHAINS[draft.chain].name}</strong></div>
                 <div><span>Token</span><strong>{draft.name || '—'} · ${draft.symbol || '—'}</strong></div>
-                {evmLaunch && <div><span>Supply</span><strong>{draft.supply || '—'}</strong></div>}
-                {evmLaunch && <div><span>Pool</span><strong>{draft.tokenLiquidity || '0'} tokens + {draft.quoteLiquidity || '0'} {quoteLabel}</strong></div>}
+                {(evmLaunch || nearLaunch) && <div><span>Supply</span><strong>{draft.supply || '—'}</strong></div>}
+                {(evmLaunch || nearLaunch) && <div><span>Pool</span><strong>{draft.tokenLiquidity || '0'} tokens + {draft.quoteLiquidity || '0'} {quoteLabel}</strong></div>}
                 <div><span>First buy</span><strong>{Number(draft.initialBuy || '0') > 0 ? `${draft.initialBuy} ${solana ? 'SOL' : CHAINS[draft.chain].symbol}` : 'None'}</strong></div>
                 <div><span>Platform fee</span><strong>{launchFeeLabel(draft.chain)}</strong></div>
               </div>
@@ -1051,7 +1195,7 @@ export function Create({
                 {busy
                   ? busyHint
                   : !wallet.address || !wallet.matches(draft.chain)
-                    ? (solana ? 'Connect Phantom' : 'Connect wallet')
+                    ? (solana ? 'Connect Phantom' : nearLaunch ? 'Connect NEAR wallet' : 'Connect wallet')
                     : launchComplete
                       ? 'View launch'
                       : liquidityPending
@@ -1085,7 +1229,7 @@ export function Create({
               <span>First buy</span>
               <strong>{Number(draft.initialBuy || '0') > 0 ? `${draft.initialBuy} ${solana ? 'SOL' : CHAINS[draft.chain].symbol}` : 'Skip'}</strong>
             </div>
-            {evmLaunch && (
+            {(evmLaunch || nearLaunch) && (
               <div className="preview-pair">
                 <span>In pool</span>
                 <strong>{draft.tokenLiquidity || '0'} / {draft.quoteLiquidity || '0'} {CHAINS[draft.chain].symbol}</strong>

@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { Outfit, Unbounded } from 'next/font/google';
+import '@near-wallet-selector/modal-ui-js/styles.css';
 import './globals.css';
 
 const sans = Outfit({
@@ -18,8 +19,8 @@ const display = Unbounded({
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://liftpad.xyz'),
-  title: { default: 'liftpad — Launch on seven networks', template: '%s · liftpad' },
-  description: 'Discover and launch community tokens across seven validated networks, including Arc, Arbitrum and Stock Token pairs on Robinhood Chain.',
+  title: { default: 'liftpad — Launch on eight networks', template: '%s · liftpad' },
+  description: 'Discover and launch community tokens across eight validated networks, including NEAR, Arc, Arbitrum and Stock Token pairs on Robinhood Chain.',
   robots: { index: false, follow: false }
 };
 

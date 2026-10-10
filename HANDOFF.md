@@ -123,7 +123,7 @@ Stare la 10 septembrie 2026. Abaterile neaprobate se prezintă utilizatorului î
 |---|---|---|
 | Next.js pe Vercel | parțial | App Next 16 există (`still-launchpad`). Deploy Vercel neconfigurat în repo. |
 | Design LONG, tot UI-ul | parțial | UI LIFT: Unbounded + vermillion, hero animat. Inspirat de ritmul LONG, nu clonă. |
-| Șase rețele | aliniat | `solana`, `base`, `bsc`, `hyperevm`, `arbitrum`, `robinhood`. |
+| Șase rețele | aliniat | `solana`, `base`, `bsc`, `hyperevm`, `arbitrum`, `robinhood`, plus `arc` și `near` (#8, branch `feat/near`). |
 | Brand independent de launchpad.meme | aliniat | Brand vizibil: **LIFT**. Pachet intern încă `still-launchpad`. |
 | Creatorul finanțează LP; semnătură din wallet | parțial | Solana: Create semnează fee 0,01 SOL + LaunchLab mint. EVM launch încă 503. |
 | Raydium LaunchLab + platformă proprie | parțial | `POST /api/launch` construiește tx LaunchLab (platformă default Raydium). Platforma LIFT PDA încă nu e creată — fee 0,25% pe curve nu e al nostru până atunci. |
@@ -321,6 +321,21 @@ Trezorerie EVM (Base, BSC, HyperEVM, Arbitrum, Robinhood): `0x6810EB6699f8d497de
 - Create: scos „Fee split / Airdrop 25% burn 25% run 50%”. Split-ul rămâne doar în How fees work.
 - Create review: scos lista Fee to / trezorerie / Pair / Your liquidity / Buyers on the curve.
 - Favicon LIFT adăugat în `src/app/icon.svg`, folosind marca pătrat + săgeată din wordmark.
+
+## Journal — 2026-10-11 — NEAR ca rețeaua #8 (branch `feat/near`, nedeployat)
+
+- Cerere utilizator: integrează rețeaua NEAR în launchpad. Branch `feat/near`; nimic împins, nimic deployat.
+- Abordare (conform principiului „furnizori existenți, fără contracte proprii”):
+  - **Token:** factory public NEP-141 `tkn.near` (testnet `tokenfactory.testnet`), `create_token` → `<symbol>.tkn.near`, toată oferta la creator. Depozit de storage citit din `get_required_deposit` (~2,28 NEAR, plătit rețelei, nu LIFT). Simbolul devine contul tokenului — unic; verificat cu `get_token` înainte de semnare.
+  - **Pool:** Ref Finance `v2.ref-finance.near`, pool simplu token/wNEAR (fee 0,30%), creat și finanțat din wallet-ul creatorului → LP-ul rămâne al creatorului. Ref whitelistează automat `*.tkn.near`.
+  - **Fee LIFT:** transfer `NEXT_PUBLIC_NEAR_LAUNCH_FEE` (implicit **0,1 NEAR — de aprobat**) către `NEXT_PUBLIC_NEAR_TREASURY` în același prompt cu create_token. Split 50/25/25 rămâne off-chain ca la celelalte rețele.
+  - **Wallet:** `@near-wallet-selector` 10.1.4 (MyNearWallet, Meteor, HERE) cu `modal-ui-js` (nu `modal-ui`, care aduce React 18). Tip separat `near` în `useWallet`; Connect face mereu sign-out + chooser nou (aprobare proaspătă); conectarea NEAR deconectează ETH/SOL și invers.
+  - **Flux Create:** (1) fee + create_token într-o singură aprobare NEAR, (2) pool: storage Ref + register + `add_simple_pool` + depuneri token/wNEAR + `add_liquidity`. Resume e pe stare on-chain (depunerile deja făcute nu se refac). Pool id = `refv1-<id>` (format DEX Screener).
+  - **Trading:** swap instant Ref (`ft_transfer_call` cu acțiuni) pe pool-urile LIFT; Explore listează perechi NEAR din DEX Screener (`wrap.near`).
+- RPC: FastNEAR (`free.rpc.fastnear.com`) — `rpc.mainnet.near.org` dă 429. Pentru producție recomandat `RPC_NEAR` cu cheie.
+- Fișiere noi: `src/lib/near.ts`, `src/lib/near-wallet.ts`, `src/lib/server/near-launch.ts`, `src/lib/server/adapters/near.ts`, `tests/near.test.ts`. Modificate: registru rețele, rute launch/liquidity/complete/status/trade/transactions, Create, wallet, launchpad, copy „seven”→„eight”, Dockerfile/compose/.env.example.
+- Verificat: `npm run check` 38/38, `npm run build` OK, builderii testați read-only pe mainnet RPC (tkn.near, Ref). **Netestat:** o lansare reală semnată (necesită wallet NEAR cu ~8+ NEAR).
+- Activare: setează `NEXT_PUBLIC_NEAR_TREASURY` (cont NEAR LIFT, ex. `liftpad.near`), aprobă fee-ul, opțional `RPC_NEAR`, apoi merge + `./deploy/deploy.sh`. Fără treasury, NEAR apare în Explore/Status dar Launch răspunde `NEAR_TREASURY_NOT_CONFIGURED`.
 
 ## Journal — 2026-09-18 (seara) — Activare snapshots + recuperare acces VM (boot-volume surgery)
 

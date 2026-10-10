@@ -8,6 +8,7 @@ import { readJson } from '@/lib/server/http';
 import { inspectEvmLiquidity } from '@/lib/server/evm-launch';
 import { upsertPlatformLaunch } from '@/lib/server/platform-launches';
 import { rpcUrl } from '@/lib/server/config';
+import { verifyNearLaunch } from '@/lib/server/near-launch';
 
 const schema = z.object({
   id: z.string().min(8).max(80),
@@ -16,11 +17,12 @@ const schema = z.object({
   symbol: z.string().min(1).max(10),
   description: z.string().max(500).optional(),
   imageUrl: z.string().max(2_000_000).optional(),
-  tokenAddress: z.string().min(32).max(90),
-  poolAddress: z.string().min(32).max(90).optional(),
-  creatorWallet: z.string().min(32).max(90),
-  feeTx: z.string().min(64).max(128).optional(),
-  mintTx: z.string().min(64).max(128).optional(),
+  // NEAR named accounts / refv1-<id> pools / 43-char tx hashes are shorter than EVM/Solana ids.
+  tokenAddress: z.string().min(2).max(90),
+  poolAddress: z.string().min(6).max(90).optional(),
+  creatorWallet: z.string().min(2).max(90),
+  feeTx: z.string().min(43).max(128).optional(),
+  mintTx: z.string().min(43).max(128).optional(),
   quoteSymbol: z.string().max(24).optional(),
   quoteAddress: z.string().max(90).optional(),
   quoteDecimals: z.number().int().min(0).max(36).optional(),
@@ -31,10 +33,24 @@ export async function POST(request: Request) {
     const parsed = schema.safeParse(await readJson(request, 2_100_000));
     if (!parsed.success) throw new ProviderError('Launch completion payload is invalid.', 400, 'INVALID_COMPLETE');
     const input = parsed.data;
+    if (input.chain !== 'near' && (input.tokenAddress.length < 32 || input.creatorWallet.length < 32 || (input.poolAddress && input.poolAddress.length < 32))) {
+      throw new ProviderError('Launch completion payload is invalid.', 400, 'INVALID_COMPLETE');
+    }
+    if (input.chain === 'near') {
+      if (!input.poolAddress || !input.feeTx) throw new ProviderError('NEAR launches need the verified fee and Ref pool.', 400, 'POOL_REQUIRED');
+      await verifyNearLaunch({
+        tokenAddress: input.tokenAddress,
+        poolAddress: input.poolAddress,
+        creatorWallet: input.creatorWallet,
+        name: input.name,
+        symbol: input.symbol,
+        feeTx: input.feeTx,
+      });
+    }
     if (input.chain !== 'solana' && !input.poolAddress) {
       throw new ProviderError('EVM launches are not live until the pool is verified on-chain.', 400, 'POOL_REQUIRED');
     }
-    if (input.chain !== 'solana') {
+    if (input.chain !== 'solana' && input.chain !== 'near') {
       if (!input.mintTx || !input.feeTx) {
         throw new ProviderError('The confirmed fee and deployment transactions are required.', 400, 'LAUNCH_TX_REQUIRED');
       }

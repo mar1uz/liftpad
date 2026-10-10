@@ -38,7 +38,7 @@ export function Explore({watch,onWatch}:{watch:string[];onWatch:(id:string)=>voi
  const pageCount=Math.max(1,Math.ceil(listed.length/PAGE_SIZE));
  const currentPage=Math.min(page,pageCount-1);
  const visible=listed.slice(currentPage*PAGE_SIZE,currentPage*PAGE_SIZE+PAGE_SIZE);
- return <><section className="hero"><div className="eyebrow"><span className="live-dot"/> SEVEN NETWORKS. ONE OPEN MARKET.</div><h1>Small beginnings.<br/><span>Limitless possibilities.</span></h1><p>A home for your next idea. Discover community tokens,<br className="desktop"/> or launch one paired with stocks — or anything you believe in. Launchers get the airdrop.</p><Link className="primary-button" href="/create">Launch a token <ArrowUpRight size={17}/></Link><HeroMotion/></section>
+ return <><section className="hero"><div className="eyebrow"><span className="live-dot"/> EIGHT NETWORKS. ONE OPEN MARKET.</div><h1>Small beginnings.<br/><span>Limitless possibilities.</span></h1><p>A home for your next idea. Discover community tokens,<br className="desktop"/> or launch one paired with stocks — or anything you believe in. Launchers get the airdrop.</p><Link className="primary-button" href="/create">Launch a token <ArrowUpRight size={17}/></Link><HeroMotion/></section>
  <section className="arc-banner" aria-labelledby="arc-banner-title">
   <div className="arc-banner-mark" aria-hidden="true">A</div>
   <div className="arc-banner-copy"><div className="stock-feature-kicker"><span className="new-tag">NEW</span><span className="live-dot"/> Network #7</div><h2 id="arc-banner-title">Launch on Arc.</h2><p>Create your token, add USDC liquidity, and start trading with predictable stablecoin gas.</p></div>
@@ -68,7 +68,7 @@ export function Explore({watch,onWatch}:{watch:string[];onWatch:(id:string)=>voi
     <strong>NVDA</strong>
     <small>Tokenized equity</small>
    </div>
-   <p className="stock-feature-note">Seven networks. One open market. Pair with what you believe in.</p>
+   <p className="stock-feature-note">Eight networks. One open market. Pair with what you believe in.</p>
   </div>
  </section>
  <section className="market"><div className="section-heading"><h2>Find your next discovery<span>.</span></h2></div>

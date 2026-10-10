@@ -3,6 +3,7 @@ import { readFileSync } from 'fs';
 import { join } from 'path';
 import { chainKeys, type ChainKey, type QuoteAsset } from '../types';
 import { ProviderError } from './errors';
+import { nearConfig } from '../near';
 const PUBLIC_RPC: Partial<Record<ChainKey, string>> = {
   solana: 'https://api.mainnet-beta.solana.com',
   base: 'https://mainnet.base.org',
@@ -11,6 +12,7 @@ const PUBLIC_RPC: Partial<Record<ChainKey, string>> = {
   arbitrum: 'https://arb1.arbitrum.io/rpc',
   robinhood: 'https://rpc.mainnet.chain.robinhood.com',
   arc: 'https://rpc.mainnet.arc.io',
+  near: nearConfig().rpc,
 };
 const address=z.string().regex(/^0x[a-fA-F0-9]{40}$/);
 const dexSchema=z.object({ factory:address, router:address, quoter:address, routerStyle:z.enum(['swap-router-02','swap-router-v1']), fee:z.number().int().min(1).max(100000), approvedPools:z.array(address).min(1), reviewed:z.literal(true) });

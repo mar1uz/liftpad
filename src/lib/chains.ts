@@ -1,4 +1,5 @@
 import type { ChainKey } from './types';
+import { nearConfig } from './near';
 export const CHAINS: Record<ChainKey, { name: string; short: string; id?: number; symbol: string; color: string; explorer: string; dexId: string }> = {
   solana: { name:'Solana', short:'SOL', symbol:'SOL', color:'#14f195', explorer:'https://solscan.io', dexId:'solana' },
   base: { name:'Base', short:'BASE', id:8453, symbol:'ETH', color:'#3b82ff', explorer:'https://basescan.org', dexId:'base' },
@@ -7,9 +8,14 @@ export const CHAINS: Record<ChainKey, { name: string; short: string; id?: number
   arbitrum: { name:'Arbitrum', short:'ARB', id:42161, symbol:'ETH', color:'#28a0f0', explorer:'https://arbiscan.io', dexId:'arbitrum' },
   robinhood: { name:'Robinhood Chain', short:'RH', id:4663, symbol:'ETH', color:'#f04b2f', explorer:'https://robinhoodchain.blockscout.com', dexId:'robinhood' },
   arc: { name:'Arc', short:'USDC', id:5042, symbol:'USDC', color:'#5b8cff', explorer:'https://explorer.arc.io', dexId:'arc' },
+  near: { name:'NEAR', short:'NEAR', symbol:'NEAR', color:'#00ec97', explorer:nearConfig().explorer, dexId:'near' },
 };
 export const chainFromDex = (id: string): ChainKey | undefined => (Object.keys(CHAINS) as ChainKey[]).find(k => CHAINS[k].dexId === id);
 export function explorerUrl(chain: ChainKey, kind: 'token'|'tx'|'address', address: string) {
+  if (chain === 'near') {
+    // nearblocks: /token/<ft account>, /txns/<hash>, /address/<account>
+    return `${CHAINS.near.explorer}/${kind === 'tx' ? 'txns' : kind}/${encodeURIComponent(address)}`;
+  }
   return `${CHAINS[chain].explorer}/${kind === 'token' && chain !== 'solana' ? 'token' : kind}/${encodeURIComponent(address)}`;
 }
 
@@ -22,5 +28,6 @@ export function explorerName(chain: ChainKey) {
     case 'arbitrum': return 'Arbiscan';
     case 'robinhood': return 'Blockscout';
     case 'arc': return 'Arc Explorer';
+    case 'near': return 'NearBlocks';
   }
 }

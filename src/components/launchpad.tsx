@@ -5,7 +5,7 @@ import { ArrowUpRight, Wallet, Check, X, Copy, MoreHorizontal, Activity, BookOpe
 import { chainKeys, type LaunchDraft, type Token } from '@/lib/types';
 import { shortAddress, usableTokenImage } from '@/lib/format';
 import { explorerUrl, CHAINS } from '@/lib/chains';
-import { PROTOCOL } from '@/lib/protocol';
+import { PROTOCOL, launchFeeLabel } from '@/lib/protocol';
 import { defaultQuoteAddress } from '@/lib/trade-quote';
 import { useWallet } from '@/lib/wallet';
 import { Modal, ExternalLink, Wordmark } from './ui';
@@ -99,7 +99,7 @@ export function Launchpad({
     if (params.get('connect') !== '1') return;
     setWalletOpen(true);
     const kind = params.get('wallet');
-    if (kind === 'solana' || kind === 'evm') void wallet.connect(kind);
+    if (kind === 'solana' || kind === 'evm' || kind === 'near') void wallet.connect(kind);
     params.delete('connect');
     params.delete('wallet');
     const next = `${window.location.pathname}${params.toString() ? `?${params}` : ''}${window.location.hash}`;
@@ -208,7 +208,7 @@ export function Launchpad({
       </main>
       <footer>
         <Link href="/" className="wordmark-link"><Wordmark small /></Link>
-        <span>Launch on seven networks. Airdrop: 25% of fees to launchers.</span>
+        <span>Launch on eight networks. Airdrop: 25% of fees to launchers.</span>
         <div className="footer-links">
           <button onClick={() => setInfo(true)}>About & risks <ArrowUpRight size={12} /></button>
           <Link href="/#how-fees-work">How fees work</Link>
@@ -222,7 +222,7 @@ export function Launchpad({
               <div className="wallet-address">
                 <Wallet size={24} />
                 <p>{shortAddress(wallet.address)}</p>
-                <span>{wallet.kind === 'solana' ? 'Solana wallet' : 'EVM wallet'}</span>
+                <span>{wallet.kind === 'solana' ? 'Solana wallet' : wallet.kind === 'near' ? 'NEAR wallet' : 'EVM wallet'}</span>
               </div>
               <button className="secondary-button full" onClick={() => navigator.clipboard.writeText(wallet.address).then(() => setToast('Address copied')).catch(() => setToast('Could not access clipboard.'))}>Copy address <Copy size={15} /></button>
               <button className="text-button full" disabled={wallet.busy} onClick={async () => { await wallet.disconnect(); /* keep modal open → chooser (Phantom vs Ethereum) */ }}>Disconnect from this app</button>
@@ -252,6 +252,11 @@ export function Launchpad({
                 }</small></span>
                 <ArrowUpRight size={18} />
               </button>
+              <button className="wallet-option" disabled={wallet.busy} onClick={async () => { if (await wallet.connect('near')) setWalletOpen(false); }}>
+                <span className="wallet-glyph" style={{ background: '#00ec97', color: '#04130c' }}>Ⓝ</span>
+                <span><strong>NEAR wallet</strong><small>Opens a chooser — MyNearWallet, Meteor, HERE</small></span>
+                <ArrowUpRight size={18} />
+              </button>
               {wallet.error && <p className="notice error">{wallet.error}</p>}
               <p className="fine-print">
                 {wallet.injected.solana || wallet.isPhantomBrowser
@@ -266,8 +271,8 @@ export function Launchpad({
       )}
       {info && (
         <Modal title="About LIFT" onClose={() => setInfo(false)}>
-          <p className="modal-copy">LIFT is an independent interface for discovering and launching tokens across seven validated networks.</p>
-          <p className="modal-copy">Platform fees: 0.01 SOL or 0.00005 ETH at launch, plus 0.25% on Solana LaunchLab trades. Uniswap swaps have no LIFT fee. Gas is paid by the signer. Liquidity is funded by the creator.</p>
+          <p className="modal-copy">LIFT is an independent interface for discovering and launching tokens across eight validated networks.</p>
+          <p className="modal-copy">Platform fees: 0.01 SOL, 0.00005 ETH or {launchFeeLabel('near')} on NEAR at launch, plus 0.25% on Solana LaunchLab trades. Uniswap swaps have no LIFT fee. Gas is paid by the signer. Liquidity is funded by the creator.</p>
           <p className="modal-copy">There will be an airdrop. 25% of platform fees is airdropped on the 1st of each month, in SOL or ETH, to wallets that completed a launch on LIFT (drafts do not count). 25% buys $LIFT and burns it. 50% runs the product. No transfer tax.</p>
           <p className="modal-copy">Market data comes from DEX Screener. A listing is not an endorsement.</p>
           <p className="modal-copy">Community tokens can lose all their value. Stock Tokens provide economic exposure to underlying securities, not ownership of those securities. Pairing does not guarantee a token’s value.</p>

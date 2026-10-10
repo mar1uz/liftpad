@@ -36,6 +36,10 @@ import {
   restoreWalletConnectAddress,
   signWithWalletConnect,
 } from './wc-solana';
+import { connectNear, disconnectNear, restoreNearAccount, sendNearTransactions } from './near-wallet';
+
+/** ETH, SOL and NEAR sessions are kept apart: exactly one kind is connected at a time. */
+export type WalletKind = 'evm' | 'solana' | 'near';
 
 type SolanaProvider = {
   isPhantom?: boolean;
@@ -160,7 +164,7 @@ function needsSecureOrigin() {
   return isIpv4Host(hostname) || (protocol === 'http:' && hostname.endsWith('.nip.io'));
 }
 
-function secureWalletUrl(kind?: 'evm' | 'solana') {
+function secureWalletUrl(kind?: WalletKind) {
   const url = new URL(dappHref());
   url.searchParams.set('connect', '1');
   if (kind) url.searchParams.set('wallet', kind);
@@ -279,14 +283,14 @@ async function proveEvmReconnect(address: string) {
   }
 }
 
-function readUiWallet(): { address: string; kind: 'evm' | 'solana' } | null {
+function readUiWallet(): { address: string; kind: WalletKind } | null {
   if (typeof window === 'undefined') return null;
   try {
     const raw = localStorage.getItem(UI_WALLET_KEY);
     if (!raw) return null;
     const parsed = JSON.parse(raw) as { address?: string; kind?: string };
     if (!parsed?.address || typeof parsed.address !== 'string') return null;
-    const kind = parsed.kind === 'solana' ? 'solana' : 'evm';
+    const kind: WalletKind = parsed.kind === 'solana' ? 'solana' : parsed.kind === 'near' ? 'near' : 'evm';
     return { address: parsed.address, kind };
   } catch {
     return null;
@@ -340,7 +344,7 @@ function getWalletStorageServerSnapshot(): string {
   return '';
 }
 
-function mirrorUiWallet(address: string, kind: 'evm' | 'solana') {
+function mirrorUiWallet(address: string, kind: WalletKind) {
   if (typeof window === 'undefined') return;
   try {
     if (!address) {
@@ -362,7 +366,7 @@ function emitWalletChange() {
   }
 }
 
-function initialWalletFromStorage(): { address: string; kind: 'evm' | 'solana'; deeplink: boolean } {
+function initialWalletFromStorage(): { address: string; kind: WalletKind; deeplink: boolean } {
   if (typeof window === 'undefined') return { address: '', kind: 'evm', deeplink: false };
   if (isUserDisconnected()) return { address: '', kind: 'evm', deeplink: false };
   const sessionPk = loadPhantomSession()?.publicKey || '';
@@ -374,7 +378,7 @@ function initialWalletFromStorage(): { address: string; kind: 'evm' | 'solana'; 
 
 function applyDeeplinkSession(
   setAddress: (v: string) => void,
-  setKind: (v: 'evm' | 'solana') => void,
+  setKind: (v: WalletKind) => void,
   setDeeplinkConnected: (v: boolean) => void,
   publicKey?: string | null,
   opts?: { force?: boolean },
@@ -400,7 +404,7 @@ function applyDeeplinkSession(
 export function useWallet() {
   const boot = initialWalletFromStorage();
   const [address, setAddress] = useState(() => boot.address);
-  const [kind, setKind] = useState<'evm' | 'solana'>(() => boot.kind);
+  const [kind, setKind] = useState<WalletKind>(() => boot.kind);
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
   const [injected, setInjected] = useState({ solana: false, evm: false });
@@ -477,7 +481,7 @@ export function useWallet() {
     (async () => {
       // Restore WalletConnect session (persisted by AppKit in this browser).
       // Skip after explicit disconnect so Connect shows the chooser again.
-      if (hasWalletConnectProjectId() && !hydratedFromDeeplink && !userDisconnected) {
+      if (hasWalletConnectProjectId() && !hydratedFromDeeplink && !userDisconnected && readUiWallet()?.kind !== 'near') {
         try {
           const ui = readUiWallet();
           // Prefer restoring the kind last shown in the UI mirror.
@@ -551,6 +555,20 @@ export function useWallet() {
       // If the UI was restored as EVM, bind that exact account to its provider
       // and do not let a trusted Phantom Solana extension overwrite it at boot.
       const restoredUi = readUiWallet();
+      // NEAR: keep it only if wallet-selector still has that exact account; never fall back to Phantom/EVM.
+      if (restoredUi?.kind === 'near') {
+        const nearId = await restoreNearAccount(restoredUi.address);
+        if (cancelled) return;
+        if (nearId) {
+          setAddress(nearId);
+          setKind('near');
+        } else {
+          setAddress('');
+          mirrorUiWallet('', 'near');
+          emitWalletChange();
+        }
+        return;
+      }
       if (restoredUi?.kind === 'evm' && (await connectedEvmProvider(restoredUi.address))) {
         if (cancelled) return;
         return;
@@ -599,6 +617,8 @@ export function useWallet() {
       if (activeEvmProvider && subscribedEvmProvider !== activeEvmProvider) return;
       const accounts = args[0] as string[];
       const next = accounts?.[0] || '';
+      // An EVM extension event must not replace a connected NEAR account.
+      if (readUiWallet()?.kind === 'near') return;
       if (next) {
         if (isUserDisconnected()) return;
         if (subscribedEvmProvider) activeEvmProvider = subscribedEvmProvider;
@@ -683,7 +703,7 @@ export function useWallet() {
     };
   }, []);
 
-  async function connect(type: 'evm' | 'solana') {
+  async function connect(type: WalletKind) {
     setBusy(true);
     setError('');
     // Keep disconnect intent until THIS connect succeeds — clearing early lets
@@ -695,6 +715,44 @@ export function useWallet() {
         flushBeforeExternal();
         window.location.assign(secureWalletUrl(type));
         return false;
+      }
+      if (type === 'near') {
+        // Separate from ETH/SOL: drop those sessions, then a fresh NEAR chooser approval.
+        clearPhantomSession();
+        setDeeplinkConnected(false);
+        try {
+          await solanaProvider()?.disconnect?.();
+        } catch {
+          /* ignore */
+        }
+        try {
+          const evm = evmProvider();
+          if (evm) await evm.request({ method: 'wallet_revokePermissions', params: [{ eth_accounts: {} }] });
+        } catch {
+          /* ignore */
+        }
+        try {
+          await disconnectWalletConnect();
+        } catch {
+          /* ignore */
+        }
+        activeEvmProvider = null;
+        setAddress('');
+        setKind('near');
+        mirrorUiWallet('', 'near');
+        const accountId = await connectNear();
+        clearUserDisconnected();
+        setAddress(accountId);
+        setKind('near');
+        mirrorUiWallet(accountId, 'near');
+        emitWalletChange();
+        setError('');
+        return true;
+      }
+      try {
+        await disconnectNear();
+      } catch {
+        /* ignore */
       }
       if (type === 'solana') {
         // Always drop EVM / other-chain leftovers before a Solana chooser connect.
@@ -1011,8 +1069,21 @@ export function useWallet() {
     }
   }
 
+  /** NEAR: sign every transaction in tx.near with one wallet approval; returns their hashes in order. */
+  async function sendNear(tx: PreparedTransaction): Promise<string[]> {
+    if (tx.expiresAt < Date.now()) throw new Error('This quote has expired. Request a new quote.');
+    if (!tx.near?.length) throw new Error('No NEAR transactions to sign.');
+    if (kind !== 'near' || !address) throw new Error('Connect your NEAR wallet first.');
+    const { hashes } = await sendNearTransactions(address, tx.near);
+    return hashes;
+  }
+
   async function send(tx: PreparedTransaction) {
     if (tx.expiresAt < Date.now()) throw new Error('This quote has expired. Request a new quote.');
+    if (tx.near) {
+      const hashes = await sendNear(tx);
+      return hashes.filter(Boolean).pop() || '';
+    }
     if (tx.encoded) {
       if (kind !== 'solana' || !address) throw new Error('Connect Phantom first.');
 
@@ -1198,7 +1269,7 @@ export function useWallet() {
   }
 
   const solanaReady = injected.solana || deeplinkConnected || Boolean(displayAddress) || (typeof window !== 'undefined' && isPhantomInjected());
-  const displayKind: 'evm' | 'solana' = (() => {
+  const displayKind: WalletKind = (() => {
     if (address) return kind;
     if (!displayAddress) return kind;
     if (typeof window === 'undefined') return kind;
@@ -1217,12 +1288,15 @@ export function useWallet() {
     busy,
     injected,
     /** True when Phantom/Solana can connect without a dead-end (injected or mobile deeplink). */
-    canConnectInPage: (type: 'evm' | 'solana') =>
-      type === 'solana'
+    canConnectInPage: (type: WalletKind) =>
+      type === 'near'
+        ? true
+        : type === 'solana'
         ? solanaReady || isMobile()
         : injected.evm || (isMobile() && hasWalletConnectProjectId()),
     connect,
     send,
+    sendNear,
     openInMetaMask: () => {
       flushBeforeExternal();
       window.location.assign(metamaskDappUrl());
@@ -1272,6 +1346,11 @@ export function useWallet() {
       } catch {
         /* ignore */
       }
+      try {
+        await disconnectNear();
+      } catch {
+        /* ignore */
+      }
       activeEvmProvider = null;
       // Re-assert cleared UI in case AppKit wrote the mirror during disconnect.
       setAddress('');
@@ -1279,6 +1358,7 @@ export function useWallet() {
       clearPhantomSession();
       emitWalletChange();
     },
-    matches: (chain: ChainKey) => (chain === 'solana' ? kind === 'solana' : kind === 'evm'),
+    matches: (chain: ChainKey) =>
+      chain === 'near' ? kind === 'near' : chain === 'solana' ? kind === 'solana' : kind === 'evm',
   };
 }

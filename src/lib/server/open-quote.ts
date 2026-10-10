@@ -4,6 +4,7 @@ import type { ChainKey, PreparedTransaction, QuoteRequest, TradeQuote } from '@/
 import { ProviderError } from './errors';
 import { buildEvmV2TradeQuote, supportsEvmLaunch } from './evm-launch';
 import { buildLaunchLabTradeQuote } from './solana-launch';
+import { buildNearTradeQuote } from './near-launch';
 
 export const SOL_MINT = 'So11111111111111111111111111111111111111112';
 const NATIVE_EVM = '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE';
@@ -191,6 +192,7 @@ async function kyberQuote(chain: ChainKey, request: QuoteRequest, tokenOut: stri
 export async function openQuote(chain: ChainKey, request: QuoteRequest): Promise<TradeQuote> {
   const tokenOut = request.tokenOut;
   if (!tokenOut) throw new ProviderError('Output token is required.', 400);
+  if (chain === 'near') return buildNearTradeQuote(request);
   if (chain === 'solana') {
     // Fresh LIFT launches live on LaunchLab bonding curves before Jupiter indexes them.
     try {

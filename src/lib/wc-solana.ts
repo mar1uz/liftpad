@@ -229,7 +229,7 @@ export async function ensureSolanaAppKit(): Promise<AppKit | null> {
       projectId,
       metadata: {
         name: 'liftpad',
-        description: 'Discover and launch across seven validated networks',
+        description: 'Discover and launch across eight validated networks',
         url: 'https://liftpad.xyz',
         icons: ['https://liftpad.xyz/favicon.ico'],
       },

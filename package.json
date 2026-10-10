@@ -11,6 +11,11 @@
     "check": "npm run typecheck && npm test"
   },
   "dependencies": {
+    "@near-wallet-selector/core": "^10.1.4",
+    "@near-wallet-selector/here-wallet": "^10.1.4",
+    "@near-wallet-selector/meteor-wallet": "^10.1.4",
+    "@near-wallet-selector/modal-ui-js": "^10.1.4",
+    "@near-wallet-selector/my-near-wallet": "^10.1.4",
     "@raydium-io/raydium-sdk-v2": "^0.2.66-alpha",
     "@reown/appkit": "^1.8.23",
     "@reown/appkit-adapter-ethers": "^1.8.23",

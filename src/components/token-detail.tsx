@@ -229,7 +229,12 @@ export function TokenDetail({
               Trade against the LaunchLab bonding curve. Quotes work even before DEX Screener indexes the pool.
             </p>
           )}
-          {liftLaunch && token.chain !== 'solana' && (
+          {liftLaunch && token.chain === 'near' && (
+            <p className="trade-ready-note">
+              Trades route through the creator's Ref Finance pool. Your NEAR wallet approves each swap.
+            </p>
+          )}
+          {liftLaunch && token.chain !== 'solana' && token.chain !== 'near' && (
             <p className="trade-ready-note">
               Sell receives {tradeQuoteSymbol(token)}. First sell asks for a token approval, then the swap.
             </p>

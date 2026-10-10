@@ -7,7 +7,7 @@ import type { ChainKey, Token } from '@/lib/types';
 export function ChainIcon({ chain }: { chain: ChainKey }) {
   return (
     <span className={`chain-icon chain-${chain}`} style={{ '--chain-color': CHAINS[chain].color } as React.CSSProperties}>
-      {chain === 'solana' ? '≋' : chain === 'base' ? '━' : chain === 'bsc' ? '◇' : chain === 'hyperevm' ? '≈' : chain === 'arbitrum' ? 'A' : chain === 'arc' ? 'A' : '↗'}
+      {chain === 'solana' ? '≋' : chain === 'base' ? '━' : chain === 'bsc' ? '◇' : chain === 'hyperevm' ? '≈' : chain === 'arbitrum' ? 'A' : chain === 'arc' ? 'A' : chain === 'near' ? 'Ⓝ' : '↗'}
     </span>
   );
 }

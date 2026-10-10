@@ -1,13 +1,14 @@
 import { CHAINS } from './chains';
 import { PROTOCOL } from './protocol';
 import type { ChainKey, Token } from './types';
+import { nearConfig } from './near';
 
 /** Kyber / Uniswap native-asset sentinel. Sell output to this address unwraps to BNB/ETH. */
 export const NATIVE_EVM = '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE';
 export const ARC_USDC = '0x3600000000000000000000000000000000000000';
 
 export function defaultQuoteAddress(chain: ChainKey): string {
-  return chain === 'solana' ? PROTOCOL.solMint : chain === 'arc' ? ARC_USDC : NATIVE_EVM;
+  return chain === 'solana' ? PROTOCOL.solMint : chain === 'arc' ? ARC_USDC : chain === 'near' ? nearConfig().wrap : NATIVE_EVM;
 }
 
 export function tradeQuoteSymbol(token: Token) {
@@ -19,6 +20,7 @@ export function tradeQuoteSymbol(token: Token) {
 export function tradeQuoteAddress(token: Token) {
   if (token.chain === 'solana') return token.quoteAddress || PROTOCOL.solMint;
   if (token.chain === 'arc') return token.quoteAddress || ARC_USDC;
+  if (token.chain === 'near') return nearConfig().wrap;
   const quote = token.quoteAddress?.trim();
   if (!quote || quote.toLowerCase() === token.address.toLowerCase()) return NATIVE_EVM;
   return quote;

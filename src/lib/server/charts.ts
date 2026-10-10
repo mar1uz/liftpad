@@ -7,6 +7,7 @@ const GT_NETWORK: Partial<Record<ChainKey, string>> = {
   hyperevm: 'hyperevm',
   robinhood: 'robinhood',
   arc: 'arc',
+  near: 'near',
 };
 
 type CacheEntry = { at: number; data: number[] };

@@ -4,12 +4,24 @@ import { CHAINS, explorerUrl } from '@/lib/chains';
 import { defaultQuoteAddress } from '@/lib/trade-quote';
 import { usableTokenImage } from '@/lib/format';
 import { chainKeys, type ChainKey } from '@/lib/types';
+import { isNearAccountId, nearPoolId } from '@/lib/near';
 import { getPair } from '@/lib/server/market';
 import { findPlatformLaunch, platformLaunchToToken } from '@/lib/server/platform-launches';
 
 export default async function Page({ params }: { params: Promise<{ chain: string; pool: string }> }) {
-  const { chain, pool } = await params;
-  if (!chainKeys.includes(chain as ChainKey) || !/^[a-zA-Z0-9]{20,90}$/.test(pool)) notFound();
+  const { chain, pool: routePool } = await params;
+  // NEAR pairs: refv1-<id> (LIFT / Ref v1) or DEX Screener refv2-<token>:wrap.near:<fee> ids.
+  let rawPool = routePool;
+  try {
+    rawPool = decodeURIComponent(routePool);
+  } catch {
+    notFound();
+  }
+  const pool = chain === 'near' ? rawPool : routePool;
+  const validPool = chain === 'near'
+    ? nearPoolId(rawPool) !== undefined || isNearAccountId(rawPool) || /^[a-z0-9][a-z0-9._:-]{2,160}$/.test(rawPool)
+    : /^[a-zA-Z0-9]{20,90}$/.test(routePool);
+  if (!chainKeys.includes(chain as ChainKey) || !validPool) notFound();
   const chainKey = chain as ChainKey;
   let token = await getPair(CHAINS[chainKey].dexId, pool).catch(() => undefined);
   const row = await findPlatformLaunch(chainKey, pool);

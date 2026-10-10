@@ -1,4 +1,5 @@
-export const chainKeys = ['solana', 'base', 'bsc', 'hyperevm', 'arbitrum', 'robinhood', 'arc'] as const;
+import type { NearTransaction } from './near';
+export const chainKeys = ['solana', 'base', 'bsc', 'hyperevm', 'arbitrum', 'robinhood', 'arc', 'near'] as const;
 export type ChainKey = typeof chainKeys[number];
 export type Token = {
   id: string; chain: ChainKey; address: string; poolAddress?: string;
@@ -29,7 +30,9 @@ export type LaunchDraft = {
   resumeFee?: boolean;
   transactions: { stage: string; hash: string; status: 'pending' | 'confirmed' | 'failed' }[];
 };
-export type PreparedTransaction = { chain: ChainKey; chainId: number; to?: `0x${string}`; data: `0x${string}`; value: string; description: string; expiresAt: number; encoded?: string };
+export type PreparedTransaction = { chain: ChainKey; chainId: number; to?: `0x${string}`; data: `0x${string}`; value: string; description: string; expiresAt: number; encoded?: string;
+  /** NEAR: transactions signed together through wallet-selector (chainId 0, data '0x'). */
+  near?: NearTransaction[] };
 export type QuoteRequest = { pool: string; tokenIn: string; tokenOut?: string; amountIn: string; slippageBps: number; account: string };
 export type TradeQuote = { chain: ChainKey; source: string; observedAt: string; expiresAt: number; amountIn: string; amountOut: string; minimumOut: string; tokenIn: string; tokenOut: string; fee: number; approval?:PreparedTransaction; transaction: PreparedTransaction };
 export interface ChainAdapter {

@@ -2,6 +2,8 @@ import { chainKeys } from '@/lib/types';
 import { rpcUrl, stocksEnabled } from '@/lib/server/config';
 import { getLiftPlatformId } from '@/lib/server/lift-platform';
 import { supportsEvmLaunch } from '@/lib/server/evm-launch';
+import { nearLaunchEnabled } from '@/lib/server/near-launch';
+import { nearConfig } from '@/lib/near';
 
 export async function GET() {
   const platformId = getLiftPlatformId();
@@ -15,7 +17,13 @@ export async function GET() {
     } catch {}
     let launch = false;
     let reason = 'Token deployment artifact and liquidity workflow require validation.';
-    if (chain === 'solana') {
+    if (chain === 'near') {
+      const cfg = nearConfig();
+      launch = rpc && nearLaunchEnabled();
+      reason = launch
+        ? `NEP-141 via ${cfg.factory} + creator-funded Ref Finance pool (${cfg.ref}) on ${cfg.networkId}.`
+        : 'NEAR token factory + Ref Finance flow ready; LIFT NEAR treasury account (NEXT_PUBLIC_NEAR_TREASURY) not configured.';
+    } else if (chain === 'solana') {
       launch = solanaLaunch && rpc;
       reason = solanaLaunch
         ? `LaunchLab platform ready (${platformId!.slice(0, 8)}…).`

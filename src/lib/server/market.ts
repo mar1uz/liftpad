@@ -22,7 +22,7 @@ const pairSchema = z.object({
   url: z.string().optional(),
 });
 
-const QUOTE_SYMBOLS = new Set(['SOL', 'WSOL', 'USDC', 'USDT', 'ETH', 'WETH', 'BNB', 'WBNB', 'HYPE', 'USDT0', 'USD', 'DAI', 'USDC.E']);
+const QUOTE_SYMBOLS = new Set(['SOL', 'WSOL', 'USDC', 'USDT', 'ETH', 'WETH', 'BNB', 'WBNB', 'HYPE', 'USDT0', 'USD', 'DAI', 'USDC.E', 'NEAR', 'WNEAR']);
 const PER_CHAIN = 20;
 const SEARCH: Record<ChainKey, string> = {
   solana: 'pump',
@@ -32,6 +32,8 @@ const SEARCH: Record<ChainKey, string> = {
   arbitrum: 'arbitrum',
   robinhood: 'hood',
   arc: 'arc',
+  // 'near' alone returns mostly Solana/BSC tickers; wNEAR pairs are NEAR-native.
+  near: 'wrap.near',
 };
 
 function headers() {

@@ -1,4 +1,5 @@
 import { CHAINS } from './chains';
+import { nearConfig } from './near';
 import type { ChainKey, Token } from './types';
 
 /** LIFT protocol token. Standard mint. Fees split off-chain / via treasury, no transfer tax. */
@@ -84,6 +85,8 @@ export function isStockPair(token: Pick<Token, 'chain' | 'quoteSymbol' | 'name' 
 export function launchFeeLabel(chain: ChainKey) {
   return chain === 'solana'
     ? `${PROTOCOL.launchFeeSol} ${CHAINS[chain].symbol}`
+    : chain === 'near'
+    ? `${nearConfig().launchFee} NEAR`
     : chain === 'arc'
     ? '1 USDC'
     : `${PROTOCOL.launchFeeEth} ${CHAINS[chain].symbol}`;
