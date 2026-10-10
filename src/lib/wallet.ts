@@ -710,7 +710,8 @@ export function useWallet() {
     // storage/onlyIfTrusted races rehydrate the old wallet mid-prompt.
     const wasDisconnected = isUserDisconnected();
     try {
-      if (needsSecureOrigin()) {
+      // NEAR wallet-selector (redirect/extension) works on plain-http loopback; only EVM/SOL need the nip.io hop.
+      if (needsSecureOrigin() && !(type === 'near' && /^127\./.test(window.location.hostname))) {
         // Same Launchpad site on HTTPS nip.io so an injected provider can attach — not Phantom browse.
         flushBeforeExternal();
         window.location.assign(secureWalletUrl(type));

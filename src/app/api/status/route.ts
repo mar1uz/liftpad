@@ -21,8 +21,8 @@ export async function GET() {
       const cfg = nearConfig();
       launch = rpc && nearLaunchEnabled();
       reason = launch
-        ? `NEP-141 via ${cfg.factory} + creator-funded Ref Finance pool (${cfg.ref}) on ${cfg.networkId}.`
-        : 'NEAR token factory + Ref Finance flow ready; LIFT NEAR treasury account (NEXT_PUBLIC_NEAR_TREASURY) not configured.';
+        ? `NEP-141 via ${cfg.factory} + creator-funded Ref Finance pool (${cfg.ref}) on ${cfg.networkId}; treasury ${cfg.treasury} (checked on-chain at launch).`
+        : 'NEAR token factory + Ref Finance flow ready; LIFT NEAR treasury for this network not configured.';
     } else if (chain === 'solana') {
       launch = solanaLaunch && rpc;
       reason = solanaLaunch

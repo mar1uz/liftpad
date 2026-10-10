@@ -337,6 +337,11 @@ Trezorerie EVM (Base, BSC, HyperEVM, Arbitrum, Robinhood): `0x6810EB6699f8d497de
 - Verificat: `npm run check` 38/38, `npm run build` OK, builderii testați read-only pe mainnet RPC (tkn.near, Ref). **Netestat:** o lansare reală semnată (necesită wallet NEAR cu ~8+ NEAR).
 - Activare: setează `NEXT_PUBLIC_NEAR_TREASURY` (cont NEAR LIFT, ex. `liftpad.near`), aprobă fee-ul, opțional `RPC_NEAR`, apoi merge + `./deploy/deploy.sh`. Fără treasury, NEAR apare în Explore/Status dar Launch răspunde `NEAR_TREASURY_NOT_CONFIGURED`.
 
+- Update (trezorerie + testnet): trezoreria NEAR e per rețea. Mainnet `NEXT_PUBLIC_NEAR_TREASURY` = `mar1uz.near` (default în cod; verificat on-chain, există). Testnet `NEXT_PUBLIC_NEAR_TREASURY_TESTNET` fără default — `mar1uz.testnet` NU există încă (2026-10-11). Serverul verifică pe RPC că trezoreria există înainte de orice semnătură (`NEAR_TREASURY_MISSING`).
+- Testnet confirmat: `tokenfactory.testnet` (get_required_deposit ≈ 2.247 NEAR), Ref `ref-finance-101.testnet` v1.9.19, `wnear_id` = `wrap.testnet`. Ref testnet NU auto-whitelistează `*.tokenfactory.testnet` → batch-ul de lichiditate face mereu `register_tokens` înainte de depozite.
+- `.env.local` (necomis): `NEXT_PUBLIC_NEAR_NETWORK=testnet`, `RPC_NEAR=https://test.rpc.fastnear.com`, `NEXT_PUBLIC_NEAR_TREASURY_TESTNET=mar1uz.testnet`, fee 0.1 NEAR (placeholder).
+- Conectarea NEAR nu mai face hop-ul nip.io pe 127.0.0.1 (doar EVM/SOL au nevoie). Dev verificat headless: /create?chain=near → Connect NEAR wallet → chooser MyNearWallet/Meteor/HERE.
+
 ## Journal — 2026-09-18 (seara) — Activare snapshots + recuperare acces VM (boot-volume surgery)
 
 ### 1. Pașii de activare (executați integral, cu dovezi)

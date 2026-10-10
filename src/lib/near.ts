@@ -45,8 +45,14 @@ export function nearConfig() {
     wrap: process.env.NEXT_PUBLIC_NEAR_WRAP || d.wrap,
     explorer: d.explorer,
     refApp: d.refApp,
-    /** LIFT NEAR treasury account. No default: launches stay disabled until it is set. */
-    treasury: process.env.NEXT_PUBLIC_NEAR_TREASURY || '',
+    /**
+     * LIFT NEAR treasury, per network (a .near account cannot receive testnet funds).
+     * Mainnet defaults to mar1uz.near (verified on-chain 2026-10-11). Testnet has no default:
+     * set NEXT_PUBLIC_NEAR_TREASURY_TESTNET once the account exists; the server also checks it on-chain.
+     */
+    treasury: id === 'testnet'
+      ? (process.env.NEXT_PUBLIC_NEAR_TREASURY_TESTNET || '').trim().toLowerCase()
+      : (process.env.NEXT_PUBLIC_NEAR_TREASURY || 'mar1uz.near').trim().toLowerCase(),
     /** Launch fee in NEAR (pending product approval; HANDOFF journal). */
     launchFee: process.env.NEXT_PUBLIC_NEAR_LAUNCH_FEE || '0.1',
   };

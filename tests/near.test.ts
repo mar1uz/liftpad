@@ -87,3 +87,34 @@ test('NEAR token without pool is resumable like EVM', () => {
   assert.ok(isEvmLiquidityPending(draft));
   assert.ok(!isEvmLiquidityPending({ ...draft, poolAddress: 'refv1-1' }));
 });
+
+test('treasury is per network; testnet uses tokenfactory/ref-finance-101/wrap.testnet', () => {
+  const saved = { ...process.env };
+  try {
+    delete process.env.NEXT_PUBLIC_NEAR_TREASURY;
+    delete process.env.NEXT_PUBLIC_NEAR_TREASURY_TESTNET;
+    process.env.NEXT_PUBLIC_NEAR_NETWORK = 'mainnet';
+    assert.equal(nearConfig().treasury, 'mar1uz.near');
+    process.env.NEXT_PUBLIC_NEAR_NETWORK = 'testnet';
+    const t = nearConfig();
+    assert.equal(t.treasury, '');
+    assert.equal(t.factory, 'tokenfactory.testnet');
+    assert.equal(t.ref, 'ref-finance-101.testnet');
+    assert.equal(t.wrap, 'wrap.testnet');
+    assert.equal(t.rpc, 'https://test.rpc.fastnear.com');
+    process.env.NEXT_PUBLIC_NEAR_TREASURY_TESTNET = 'Mar1uz.testnet';
+    assert.equal(nearConfig().treasury, 'mar1uz.testnet');
+  } finally {
+    process.env = saved;
+  }
+});
+
+test('deposits always register the tokens on Ref (testnet does not auto-whitelist factory tokens)', () => {
+  const txs = liquidityTransactions({
+    ref: 'ref-finance-101.testnet', wrap: 'wrap.testnet', token: 'orbit.tokenfactory.testnet', account: 'marius.testnet',
+    tokenRaw: '10', nearRaw: '20', poolId: 5, createPool: false,
+    refRegistered: true, refOnToken: true, accountOnWrap: true, depositToken: true, depositNear: false,
+  });
+  assert.equal(txs[0].receiverId, 'ref-finance-101.testnet');
+  assert.deepEqual(txs[0].actions.map((a) => (a.type === 'FunctionCall' ? a.methodName : a.type)), ['register_tokens']);
+});

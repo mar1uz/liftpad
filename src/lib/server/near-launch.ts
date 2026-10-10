@@ -183,7 +183,11 @@ export function launchTransactions(input: { args: FactoryTokenArgs; deposit: str
 export async function buildNearLaunch(input: { name: string; symbol: string; supply: string; account: string; icon?: string; feeTx?: string }) {
   const cfg = nearConfig();
   if (!nearLaunchEnabled()) {
-    throw new ProviderError('NEAR launches need the LIFT NEAR treasury account (NEXT_PUBLIC_NEAR_TREASURY).', 503, 'NEAR_TREASURY_NOT_CONFIGURED');
+    throw new ProviderError(`NEAR ${cfg.networkId} launches need the LIFT treasury account (${cfg.networkId === 'testnet' ? 'NEXT_PUBLIC_NEAR_TREASURY_TESTNET' : 'NEXT_PUBLIC_NEAR_TREASURY'}).`, 503, 'NEAR_TREASURY_NOT_CONFIGURED');
+  }
+  // A transfer to a missing named account fails; refuse before the wallet prompt.
+  if (!(await accountExists(cfg.treasury))) {
+    throw new ProviderError(`The LIFT treasury ${cfg.treasury} does not exist on NEAR ${cfg.networkId} yet. Create it first.`, 503, 'NEAR_TREASURY_MISSING');
   }
   if (!isNearAccountId(input.account)) throw new ProviderError('Connect a NEAR account.', 400, 'INVALID_ACCOUNT');
   let tokenId: string;
@@ -314,8 +318,12 @@ export function liquidityTransactions(input: {
   const txs: NearTransaction[] = [];
   const refActions: NearTransaction['actions'] = [];
   if (!input.refRegistered) refActions.push({ type: 'FunctionCall', methodName: 'storage_deposit', args: { account_id: input.account, registration_only: false }, gas: TGAS(10), deposit: REF_STORAGE });
-  if (input.createPool) {
+  // Ref only accepts deposits of globally whitelisted or user-registered tokens. Mainnet auto-whitelists
+  // *.tkn.near, testnet does not whitelist *.tokenfactory.testnet — so always register (idempotent, 1 yocto).
+  if (input.createPool || input.depositToken || input.depositNear) {
     refActions.push({ type: 'FunctionCall', methodName: 'register_tokens', args: { token_ids: [input.token, input.wrap] }, gas: TGAS(10), deposit: ONE_YOCTO });
+  }
+  if (input.createPool) {
     refActions.push({ type: 'FunctionCall', methodName: 'add_simple_pool', args: { tokens: [input.token, input.wrap], fee: NEAR_POOL_FEE }, gas: TGAS(30), deposit: POOL_STORAGE });
   }
   if (refActions.length) txs.push({ receiverId: input.ref, actions: refActions });
