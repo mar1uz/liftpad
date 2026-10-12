@@ -628,3 +628,117 @@
 
 /* === Daily snapshot features (2026-09-18) === */
 .movers{padding:10px 0 6px}.movers .section-heading{margin-bottom:18px}.movers .muted{display:inline-flex;gap:6px;align-items:center}.movers .muted svg{color:var(--up)}.movers-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}.movers-grid .token-card{position:relative}.rank-badge{color:var(--up);border-color:#2a5a45;background:#122018;margin-left:8px;text-transform:none;letter-spacing:.3px}@media(max-width:800px){.movers-grid{grid-template-columns:1fr}}
+
+
+/* === Product hero panel (replaces AI orb, 2026-09-18) === */
+.hero-product{
+  position:absolute;
+  inset:18px 8px 18px auto;
+  width:min(420px,100%);
+  display:flex;
+  flex-direction:column;
+  gap:14px;
+  justify-content:center;
+  z-index:1;
+}
+.hero-product-glow{
+  position:absolute;
+  right:10%;
+  top:18%;
+  width:260px;
+  height:260px;
+  border-radius:50%;
+  background:radial-gradient(circle,rgba(240,75,47,.28),transparent 68%);
+  filter:blur(8px);
+  pointer-events:none;
+  z-index:0;
+}
+.hero-pair-card,.hero-market-card{
+  position:relative;
+  z-index:1;
+  background:linear-gradient(180deg,#1a1715ee,#12100fee);
+  border:1px solid #3a312c;
+  border-radius:18px;
+  box-shadow:0 24px 48px #00000088, inset 0 1px 0 #ffffff0d;
+  backdrop-filter:blur(10px);
+}
+.hero-pair-card{padding:18px 18px 16px}
+.hero-pair-kicker{
+  font-size:10px;
+  letter-spacing:1.4px;
+  font-weight:700;
+  color:#f04b2f;
+  margin-bottom:14px;
+}
+.hero-pair-row{
+  display:flex;
+  align-items:center;
+  gap:10px;
+}
+.hero-token-chip{
+  flex:1;
+  display:flex;
+  align-items:center;
+  gap:10px;
+  min-width:0;
+  background:#0d0c0b;
+  border:1px solid #2c2622;
+  border-radius:14px;
+  padding:10px 12px;
+}
+.hero-token-chip strong{
+  display:block;
+  font-size:14px;
+  letter-spacing:-.2px;
+}
+.hero-token-chip em{
+  display:block;
+  font-style:normal;
+  font-size:11px;
+  color:var(--muted);
+}
+.hero-token-mark{
+  width:34px;height:34px;border-radius:10px;
+  display:grid;place-items:center;
+  font-weight:800;font-size:14px;flex-shrink:0;
+}
+.hero-token-mark.yours{background:#f04b2f;color:#1a0806}
+.hero-token-mark.stock{background:#241714;color:#f5f2ee;border:1px solid #f04b2f66}
+.hero-pair-x{
+  color:#f04b2f;
+  font-size:22px;
+  font-weight:800;
+  line-height:1;
+}
+.hero-pair-meta{
+  margin-top:14px;
+  display:flex;
+  align-items:center;
+  gap:8px;
+  color:var(--muted);
+  font-size:12px;
+  font-weight:600;
+}
+.hero-pair-dot{
+  width:4px;height:4px;border-radius:50%;background:#f04b2f;
+}
+.hero-market-card{padding:14px 16px}
+.hero-market-head{
+  display:flex;justify-content:space-between;align-items:center;
+  margin-bottom:10px;font-size:12px;font-weight:700;color:var(--muted);
+}
+.hero-market-live{
+  color:#f04b2f;letter-spacing:1px;font-size:10px;
+}
+.hero-market-row{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:8px 0;border-top:1px solid #2a2420;font-size:13px;font-weight:700;
+}
+.hero-market-row .up{color:#3ecf8e}
+@media(max-width:800px){
+  .hero-product{width:260px;right:-8px;opacity:.92}
+  .hero-market-card{display:none}
+}
+@media(max-width:560px){
+  .hero-product{display:none}
+}

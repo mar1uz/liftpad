@@ -63,26 +63,41 @@ export function HeroMotion() {
     <div className="hero-stage" aria-hidden="true">
       <div className="hero-mist hero-mist-a" />
       <div className="hero-mist hero-mist-b" />
-      <div className="hero-embers" />
-      <div className="orbit-wrap">
-        <div className="orb-halo" />
-        <div className="orbit-ring ring-solid-outer" />
-        <div className="orbit-ring ring-dashed-a">
-          <span className="orbit-node" />
+      <div className="hero-product">
+        <div className="hero-product-glow" />
+        <div className="hero-pair-card">
+          <div className="hero-pair-kicker">STOCK PAIR · LIVE</div>
+          <div className="hero-pair-row">
+            <div className="hero-token-chip">
+              <span className="hero-token-mark yours">Y</span>
+              <div>
+                <strong>$YOURS</strong>
+                <em>Community launch</em>
+              </div>
+            </div>
+            <span className="hero-pair-x">×</span>
+            <div className="hero-token-chip">
+              <span className="hero-token-mark stock">N</span>
+              <div>
+                <strong>NVDA</strong>
+                <em>Tokenized equity</em>
+              </div>
+            </div>
+          </div>
+          <div className="hero-pair-meta">
+            <span>Robinhood Chain</span>
+            <span className="hero-pair-dot" />
+            <span>Open market</span>
+          </div>
         </div>
-        <div className="orbit-ring ring-dashed-b">
-          <span className="orbit-node node-mid" />
-          <span className="orbit-node node-sm node-alt" />
-        </div>
-        <div className="orbit-ring ring-dashed-c">
-          <span className="orbit-node node-sm" />
-        </div>
-        <div className="orbit-ring ring-solid-inner" />
-        <div className="orb">
-          <span className="orb-core" />
-          <span className="orb-veins" />
-          <span className="orb-speckle" />
-          <span className="orb-shine" />
+        <div className="hero-market-card">
+          <div className="hero-market-head">
+            <span>Trending now</span>
+            <span className="hero-market-live">LIVE</span>
+          </div>
+          <div className="hero-market-row"><span>$ORBIT</span><span className="up">+24.8%</span></div>
+          <div className="hero-market-row"><span>$EMBER</span><span className="up">+12.1%</span></div>
+          <div className="hero-market-row"><span>$ARC</span><span className="up">+8.4%</span></div>
         </div>
       </div>
     </div>
